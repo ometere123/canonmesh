@@ -39,6 +39,7 @@ import {
 } from "./ui";
 import { IDLE_TX, TransactionRail, type TxState } from "./transaction-rail";
 import { effectiveBranchActivity, inactiveAncestorLabel } from "@/lib/branch-lineage";
+import { formatWriteError } from "@/lib/error-format";
 import {
   confirmBranchCreated,
   confirmReviewedProposal,
@@ -144,7 +145,7 @@ export function WorldDesk() {
         message: "Authoritative contract state confirmed.",
       });
     } catch (e) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = formatWriteError(e, tx.hash);
       setError(m);
       setTx((x) => ({ stage: "error", hash: x.hash, message: m }));
     }
@@ -698,7 +699,7 @@ export function BranchMap({ worldId }: { worldId: number }) {
     } catch (e) {
       setTx({
         stage: "error",
-        message: e instanceof Error ? e.message : String(e),
+        message: formatWriteError(e, tx.hash),
       });
     }
   }
@@ -874,7 +875,7 @@ export function ProposalComposer({ worldId }: { worldId: number }) {
     } catch (e) {
       setTx({
         stage: "error",
-        message: e instanceof Error ? e.message : String(e),
+        message: formatWriteError(e, tx.hash),
       });
     }
   }
@@ -1051,7 +1052,7 @@ export function ProposalReview({ proposalId }: { proposalId: number }) {
     } catch (e) {
       setTx({
         stage: "error",
-        message: e instanceof Error ? e.message : String(e),
+        message: formatWriteError(e, tx.hash),
       });
     }
   }
