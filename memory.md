@@ -92,4 +92,13 @@ GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de
 - Vercel production URL
 - at least one hosted injected-wallet write against the deployed contract
 
+## 2026-08-26 — Takeover environment checkpoint
+
+- Checkout is at `9d7084ae3e5af16d72cc8231fe99bcc867319b4b`; `origin/main` resolves to the same SHA. A fresh `git pull origin main` was attempted but GitHub HTTPS was unavailable from this environment.
+- `requirements-dev.txt` installation passed using the bundled Python runtime.
+- `scripts/preflight.py` passed: 23 required contract methods and no backend paths.
+- `pytest tests/direct -q` passed: 20 tests.
+- JavaScript dependency installation could not complete: the system npm launcher is broken and registry package downloads return `EACCES` from the available package manager, including after an escalation attempt. Therefore the npm verification scripts are not proven in this environment.
+- No `genlayer` CLI executable or authenticated account is available in this environment. StudioNet deployment, live lifecycle, Vercel deployment, and hosted-wallet proof remain NOT PROVEN.
+
 Never invent any of these.

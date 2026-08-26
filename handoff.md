@@ -13,6 +13,15 @@
 - **Vercel:** not deployed yet.
 - **Next exact action:** from an environment with a supported authenticated GenLayer CLI account, freeze current `main`, deploy `contracts/canonmesh.py` to StudioNet, verify deployment execution/schema, then execute and record the real lifecycle proof before configuring Vercel.
 
+## 2026-08-26 — Takeover attempt / environment blocker
+
+- Confirmed checkout `HEAD` and `origin/main` are both `9d7084ae3e5af16d72cc8231fe99bcc867319b4b`; a fresh pull was attempted and GitHub HTTPS was unavailable.
+- `requirements-dev.txt` installed successfully with the bundled Python runtime.
+- `scripts/preflight.py`: PASS — 23 required contract methods, no backend paths.
+- `pytest tests/direct -q`: PASS — 20 passed.
+- Required JavaScript install is NOT PROVEN because the system npm launcher is broken and package downloads return `EACCES` from the available package manager, including with escalation.
+- StudioNet deployment is BLOCKED in this environment: no `genlayer` executable and no authenticated supported CLI account are available. No deployment facts or lifecycle claims were made.
+
 ## 2026-08-23 — Blueprint pack
 
 Created AGENTS, PRD, TRD, architecture, UI/UX, plan, memory and handoff. No code/deployment existed yet.
