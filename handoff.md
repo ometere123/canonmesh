@@ -146,3 +146,11 @@ Not yet proven: StudioNet deployment, deployed schema/source parity, real consen
 12. Only then mark `DEPLOYMENT.json` deployed and add public contract/explorer/frontend URLs.
 
 **Do not:** add a backend/database/indexer/mock mode; create a private-key fallback; weaken same-branch retcon/branch-local override semantics; treat VecDB distance as confidence; claim a transaction succeeded from hash/finality alone; invent any deployment fact.
+
+## Hardening checkpoint
+
+- Studio Mode isolation is `NOT PROVEN`: this Windows setup has no `gltest` executable, and the installed CLI exposes no Studio Mode deployment command. No third identical CLI deployment was attempted.
+- An inactive ancestor now makes a selected lineage ineligible for proposal submission, review, semantic retrieval, and descendant branch creation until reactivated.
+- Review performs a second lineage freshness check immediately after consensus. Explicit `duplicate_of` equivalence settles `INSUFFICIENT_CONTEXT` without appending duplicate canon.
+- Direct Mode covers unavailable, mismatched, and valid HTTPS SHA-256-bound evidence. Frontend writes remain in `confirming` until authoritative state re-read succeeds.
+- The Direct Mode framework executes one mocked leader path and cannot simulate separate leader/validator responses; adversarial disagreement proof is `NOT PROVEN`.

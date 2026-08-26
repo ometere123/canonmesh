@@ -7,6 +7,8 @@ the contract is still loaded and executed by Direct Mode.
 """
 
 import os
+import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -14,12 +16,19 @@ import pytest
 @pytest.fixture(autouse=True)
 def allow_genlayer_test_windows_temp_cleanup(monkeypatch):
     unlink = os.unlink
+    temp_dir = Path(tempfile.gettempdir()).resolve()
 
     def unlink_after_fd_injection(path):
         try:
             unlink(path)
-        except PermissionError:
-            pass
+        except PermissionError as error:
+            candidate = Path(path)
+            if not (
+                getattr(error, "winerror", None) == 32
+                and candidate.parent.resolve() == temp_dir
+                and candidate.name.startswith("tmp")
+            ):
+                raise
 
     # loader imports os inside the affected function, so patch the shared
     # module for the duration of this test only.

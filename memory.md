@@ -42,6 +42,8 @@ There is no project backend, application database, custom indexer, project API, 
 - accepted entries only are inserted into VecDB
 - similarity cannot set final proposal status
 - proposal lineage versions are frozen at submission and rechecked before review
+- selected lineages with any inactive ancestor are ineligible for proposal submission, review, semantic retrieval, and descendant branch creation until reactivated
+- explicit duplicate/equivalent canon identification settles `INSUFFICIENT_CONTEXT` and creates no second entry
 - RETCON_VALID targets only active same-world same-branch canon, max 8
 - child branch cannot retcon/global-mutate parent canon
 - BRANCH_ONLY targets active inherited ancestor canon, max 8
@@ -120,5 +122,6 @@ GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de
 - Full deployment receipt extraction proves `data.contract_address` matches the CLI-displayed address for both prior transactions. This rules out an incorrect predicted/displayed address as the current explanation.
 - Added 3 genuine Direct Mode contract execution tests; complete direct suite is 23 passed using `genlayer-test 0.29.2` and pinned GenVM runner `v0.2.16`. Direct Mode covers deployment, state writes/reads, authorization and lifecycle invariants with mocked LLM output for nondeterministic review.
 - VecDB runtime API has no metadata filtering or namespace. Global top-32 retrieval followed by world/lineage filtering is bounded but can starve eligible entries ranked after 32; this is documented as a runtime limitation, not fixed with unsupported APIs.
+- Frontend writes now expose a confirming-state stage and only display terminal success after an authoritative contract re-read; transaction hashes/finality are not persisted by the contract and are therefore local transaction proof.
 
 Never invent any of these.

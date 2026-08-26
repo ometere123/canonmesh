@@ -16,6 +16,7 @@ CanonMesh has a real protocol state machine:
 - validators independently reason over the same charter, proposal and active semantic context;
 - same-branch retcons can supersede only same-branch active canon;
 - branch-only decisions shadow exact inherited entries only for that branch and descendants;
+- a lineage with an inactive ancestor cannot submit, review, retrieve, or create further descendants until reactivated;
 - conflicts and insufficient-context outcomes never mutate canon;
 - only accepted entries enter canonical VecDB memory;
 - final state transitions are deterministic after consensus.

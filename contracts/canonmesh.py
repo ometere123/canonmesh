@@ -289,6 +289,13 @@ class CanonMesh(gl.Contract):
             if depth > MAX_BRANCH_DEPTH: raise gl.vm.UserError("EXPECTED: branch ancestry exceeds maximum depth")
         return out
 
+    def _require_active_lineage(self, branch_id: u256) -> list:
+        lineage = self._lineage(branch_id)
+        for bid in lineage:
+            if not self._branch(bid).active:
+                raise gl.vm.UserError("EXPECTED: branch lineage contains an inactive ancestor")
+        return lineage
+
     def _lineage_snapshot(self, branch_id: u256) -> str:
         return json.dumps([[int(bid), int(self._branch(bid).version)] for bid in self._lineage(branch_id)], separators=(",", ":"))
 
@@ -367,16 +374,17 @@ class CanonMesh(gl.Contract):
             artifact = self._fetch_bound(snapshot["artifact_url"], snapshot["artifact_digest"])
             charter_artifact = self._fetch_bound(snapshot["charter_url"], snapshot["charter_digest"])
             if not artifact["ok"] or not charter_artifact["ok"]:
-                return {"ok": True, "decision": DEC_INSUFFICIENT, "supersedes": [], "branch_overrides": [],
+                return {"ok": True, "decision": DEC_INSUFFICIENT, "supersedes": [], "branch_overrides": [], "duplicate_of": 0,
                     "rationale": "Required digest-bound public evidence could not be independently verified.", "evidence_summary": "unavailable"}
             prompt = """You adjudicate fictional-universe canon under GenLayer consensus.
 %s
-Return JSON only with decision, supersedes, branch_overrides, rationale, evidence_summary.
+Return JSON only with decision, supersedes, branch_overrides, duplicate_of, rationale, evidence_summary.
 Allowed decisions: COMPATIBLE, RETCON_VALID, BRANCH_ONLY, CONFLICT, INSUFFICIENT_CONTEXT.
 RETCON_VALID is only for RETCON mode and may supersede only active RELATED entries from THIS SAME BRANCH.
 BRANCH_ONLY is only for BRANCH mode on a child branch and may override only active RELATED entries inherited from ANCESTOR branches.
 Similarity distance selected context only; it is never truth/confidence. Do not judge artistic quality.
 For all decisions other than RETCON_VALID supersedes must be []. For all decisions other than BRANCH_ONLY branch_overrides must be [].
+If the proposal is only a cosmetic or semantically equivalent rewording of one RELATED_ACTIVE_CANON entry, set duplicate_of to that entry ID. Otherwise set duplicate_of to 0. A nonzero duplicate_of is not an authorization to append another canon entry.
 WORLD_CHARTER: %s
 CHARTER_ARTIFACT: %s
 PROPOSAL: %s
@@ -388,10 +396,20 @@ RELATED_ACTIVE_CANON: %s""" % (
                     "parent_branch_id": snapshot["parent_branch_id"]}, sort_keys=True), artifact["text"], json.dumps(snapshot["related"], sort_keys=True))
             raw = gl.nondet.exec_prompt(prompt, response_format="json")
             if not isinstance(raw, dict):
-                return {"ok": True, "decision": DEC_INSUFFICIENT, "supersedes": [], "branch_overrides": [], "rationale": "Unusable model output.", "evidence_summary": ""}
+                return {"ok": True, "decision": DEC_INSUFFICIENT, "supersedes": [], "branch_overrides": [], "duplicate_of": 0, "rationale": "Unusable model output.", "evidence_summary": ""}
             decision = str(raw.get("decision", "")).upper()
             if decision not in DECISIONS: decision = DEC_INSUFFICIENT
             related_by_id = {int(item["entry_id"]): item for item in snapshot["related"]}
+            try: duplicate_of = int(raw.get("duplicate_of", 0))
+            except Exception: duplicate_of = -1
+            duplicate_meta = related_by_id.get(duplicate_of)
+            if duplicate_of != 0 and (duplicate_meta is None or int(duplicate_meta["branch_id"]) not in [int(x) for x in self._lineage(proposal.branch_id)]):
+                duplicate_of = -1
+            if duplicate_of == -1:
+                decision = DEC_INSUFFICIENT
+                duplicate_of = 0
+            elif duplicate_of != 0:
+                decision = DEC_INSUFFICIENT
             supersedes, branch_overrides = [], []
             for item in raw.get("supersedes", []) if isinstance(raw.get("supersedes", []), list) else []:
                 try: value = int(item)
@@ -410,7 +428,7 @@ RELATED_ACTIVE_CANON: %s""" % (
             if decision == DEC_BRANCH and (snapshot["mode"] != MODE_BRANCH or snapshot["parent_branch_id"] == 0 or not branch_overrides): decision, branch_overrides = DEC_INSUFFICIENT, []
             if decision != DEC_RETCON: supersedes = []
             if decision != DEC_BRANCH: branch_overrides = []
-            return {"ok": True, "decision": decision, "supersedes": supersedes, "branch_overrides": branch_overrides,
+            return {"ok": True, "decision": decision, "supersedes": supersedes, "branch_overrides": branch_overrides, "duplicate_of": duplicate_of,
                 "rationale": " ".join(str(raw.get("rationale", "")).split())[:MAX_REASONING],
                 "evidence_summary": " ".join(str(raw.get("evidence_summary", "")).split())[:MAX_REASONING]}
 
@@ -420,6 +438,7 @@ RELATED_ACTIVE_CANON: %s""" % (
             if not isinstance(leader, dict) or not bool(leader.get("ok", False)): return False
             own = leader_fn()
             if leader.get("decision") != own.get("decision"): return False
+            if int(leader.get("duplicate_of", 0)) != int(own.get("duplicate_of", 0)): return False
             if leader.get("decision") == DEC_RETCON:
                 return [int(x) for x in leader.get("supersedes", [])] == [int(x) for x in own.get("supersedes", [])]
             if leader.get("decision") == DEC_BRANCH:
@@ -455,6 +474,7 @@ RELATED_ACTIVE_CANON: %s""" % (
         self._require_editor(world_id)
         parent = self._branch(parent_branch_id)
         if parent.world_id != world_id or not parent.active: raise gl.vm.UserError("EXPECTED: invalid parent branch")
+        self._require_active_lineage(parent_branch_id)
         name = self._bounded(branch_name, "branch name", MAX_NAME, True)
         existing = self.world_branches.get(world_id)
         if existing is not None:
@@ -483,6 +503,7 @@ RELATED_ACTIVE_CANON: %s""" % (
         self._require_editor(world_id)
         branch = self._branch(branch_id)
         if branch.world_id != world_id or not branch.active: raise gl.vm.UserError("EXPECTED: invalid branch")
+        self._require_active_lineage(branch_id)
         clean_mode = str(mode).strip().upper()
         if clean_mode not in MODES: raise gl.vm.UserError("EXPECTED: proposal mode must be ADD, RETCON, or BRANCH")
         if clean_mode == MODE_BRANCH and branch.parent_branch_id == ZERO: raise gl.vm.UserError("EXPECTED: BRANCH mode requires a child branch")
@@ -525,9 +546,11 @@ RELATED_ACTIVE_CANON: %s""" % (
         if not self._lineage_fresh(proposal): raise gl.vm.UserError("EXPECTED: stale proposal; branch lineage changed")
         world = self._world(proposal.world_id); branch = self._branch(proposal.branch_id)
         if not branch.active: raise gl.vm.UserError("EXPECTED: proposal branch is inactive")
+        self._require_active_lineage(proposal.branch_id)
         related = self._related(proposal, MAX_RELATED)
         verdict = self._judge(proposal, world, branch, related)
         if not isinstance(verdict, dict) or not bool(verdict.get("ok", False)): raise gl.vm.UserError("TRANSIENT: consensus result unavailable")
+        if not self._lineage_fresh(proposal): raise gl.vm.UserError("EXPECTED: proposal lineage changed during review")
         decision = str(verdict.get("decision", ""))
         if decision not in DECISIONS: raise gl.vm.UserError("TRANSIENT: invalid consensus decision")
         related_ids = [int(item["entry_id"]) for item in related]
@@ -634,12 +657,14 @@ RELATED_ACTIVE_CANON: %s""" % (
     @gl.public.view
     def preview_related(self, proposal_id: u256, k: int) -> list:
         if k < 1 or k > MAX_RELATED: raise gl.vm.UserError("EXPECTED: related limit must be 1..8")
-        return self._related(self._proposal(proposal_id), k)
+        proposal = self._proposal(proposal_id); self._require_active_lineage(proposal.branch_id)
+        return self._related(proposal, k)
 
     @gl.public.view
     def search_canon(self, world_id: u256, branch_id: u256, query_text: str, k: int) -> list:
         self._world(world_id); branch = self._branch(branch_id)
         if branch.world_id != world_id: raise gl.vm.UserError("EXPECTED: branch belongs to another world")
+        self._require_active_lineage(branch_id)
         query = self._bounded(query_text, "search query", MAX_STATEMENT, True)
         if k < 1 or k > MAX_RELATED: raise gl.vm.UserError("EXPECTED: search limit must be 1..8")
         if len(self.vectors) == 0: return []
