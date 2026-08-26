@@ -1,11 +1,11 @@
-import { TransactionStatus } from "genlayer-js/types";
+import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import type { CalldataEncodable, TransactionHash } from "genlayer-js/types";
 import type { Branch, CanonEntry, ContractStats, Proposal, ReadResult, RelatedCanon, World } from "@/lib/types";
 import { createInjectedClient } from "./client";
 import { CONTRACT_ADDRESS, REQUIRED_METHODS } from "./config";
 import { createReadClient } from "./read-client";
 import { inspectGenVMExecution } from "./execution";
-import { formatError } from "@/lib/error-format";
+import { formatError } from "../error-format";
 
 type WriteClient=Awaited<ReturnType<typeof createInjectedClient>>;
 const available=<T>(value:T):ReadResult<T>=>({kind:"AVAILABLE",value});
@@ -22,29 +22,33 @@ function parseEntry(v:unknown):CanonEntry|undefined{if(!isRecord(v))return;const
 function parseProposal(v:unknown):Proposal|undefined{if(!isRecord(v))return;const nums=["id","world_id","branch_id","status_code","base_branch_version","resulting_entry_id","duplicate_of"].map(k=>integer(v[k]));const strs=["proposer","mode","title","statement","artifact_url","artifact_digest","entity_keys_json","time_anchor","status","decision","related_ids_json","supersedes_json","branch_overrides_json","rationale","evidence_summary","lineage_snapshot_json","submitted_at","reviewed_at"].map(k=>text(v[k]));if(nums.some(x=>x===undefined)||strs.some(x=>x===undefined)||!["ADD","RETCON","BRANCH"].includes(strs[1]!))return;return{id:nums[0]!,world_id:nums[1]!,branch_id:nums[2]!,status_code:nums[3]!,base_branch_version:nums[4]!,resulting_entry_id:nums[5]!,duplicate_of:nums[6]!,proposer:strs[0]!,mode:strs[1]! as Proposal["mode"],title:strs[2]!,statement:strs[3]!,artifact_url:strs[4]!,artifact_digest:strs[5]!,entity_keys_json:strs[6]!,time_anchor:strs[7]!,status:strs[8]!,decision:strs[9]!,related_ids_json:strs[10]!,supersedes_json:strs[11]!,branch_overrides_json:strs[12]!,rationale:strs[13]!,evidence_summary:strs[14]!,lineage_snapshot_json:strs[15]!,submitted_at:strs[16]!,reviewed_at:strs[17]!}}
 function parseRelated(v:unknown):RelatedCanon|undefined{if(!isRecord(v))return;const entry_id=integer(v.entry_id),branch_id=integer(v.branch_id),distance=text(v.distance),title=text(v.title),statement=text(v.statement),entity_keys_json=text(v.entity_keys_json),time_anchor=text(v.time_anchor),status=v.status===undefined?undefined:text(v.status);if(entry_id===undefined||branch_id===undefined||distance===undefined||title===undefined||statement===undefined||entity_keys_json===undefined||time_anchor===undefined)return;return{entry_id,branch_id,distance,title,statement,entity_keys_json,time_anchor,status}}
 function parseStats(v:unknown):ContractStats|undefined{if(!isRecord(v))return;const keys=["world_count","branch_count","entry_count","proposal_count","vector_dimensions","max_related","max_page","max_branch_depth"] as const;const nums=keys.map(k=>integer(v[k]));const embedding_model=text(v.embedding_model);if(nums.some(x=>x===undefined)||embedding_model===undefined)return;return{world_count:nums[0]!,branch_count:nums[1]!,entry_count:nums[2]!,proposal_count:nums[3]!,embedding_model,vector_dimensions:nums[4]!,max_related:nums[5]!,max_page:nums[6]!,max_branch_depth:nums[7]!}}
-async function performRead<T>(read:()=>Promise<unknown>,parser:(v:unknown)=>T|undefined,label:string):Promise<ReadResult<T>>{try{const raw=await read();const parsed=parser(raw);return parsed===undefined?unavailable(`${label} returned malformed data.`):available(parsed)}catch(error){const message=formatError(error);if(/unknown|not found|Missing or invalid parameters/i.test(message))return notFound();return unavailable(message)}}
+const expectedNotFound=(label:string,message:string)=>/EXPECTED:\s*unknown\s+(world|branch|canon entry|proposal)/i.test(message)&&((label==="get_world"&&/unknown\s+world/i.test(message))||(label==="get_branch"&&/unknown\s+branch/i.test(message))||(label==="get_entry"&&/unknown\s+(?:canon\s+)?entry/i.test(message))||(label==="get_proposal"&&/unknown\s+proposal/i.test(message)));
+const retryable=(message:string)=>/network|fetch|timeout|gateway|temporar|contract.*not found|connection|ECONN|503|502|504/i.test(message);
+async function performRead<T>(read:()=>Promise<unknown>,parser:(v:unknown)=>T|undefined,label:string):Promise<ReadResult<T>>{for(let attempt=0;attempt<3;attempt++){try{const raw=await read();const parsed=parser(raw);return parsed===undefined?unavailable(`${label} returned malformed data.`):available(parsed)}catch(error){const message=formatError(error);if(expectedNotFound(label,message))return notFound();if(!retryable(message)||attempt===2)return unavailable(message);await new Promise(resolve=>setTimeout(resolve,attempt===0?350:850));}}return unavailable(`${label} read failed.`)}
 const parseIntArray=(v:unknown):number[]|undefined=>Array.isArray(v)&&v.every(x=>integer(x)!==undefined)?v.map(x=>integer(x)!):undefined;
 const parseRelatedArray=(v:unknown):RelatedCanon[]|undefined=>Array.isArray(v)&&v.every(x=>parseRelated(x))?v.map(x=>parseRelated(x)!):undefined;
 const address=()=>{if(!CONTRACT_ADDRESS)throw new Error("No deployed CanonMesh contract address is configured.");return CONTRACT_ADDRESS};
-const rc=()=>createReadClient();
+const readClient=createReadClient();
+const rc=()=>readClient;
+const canonicalRead=(functionName:string,args:CalldataEncodable[])=>rc().readContract({address:address(),functionName,args,transactionHashVariant:TransactionHashVariant.LATEST_FINAL});
 
 export async function verifyContractSchema(){if(!CONTRACT_ADDRESS)return{ok:false,configured:false,missing:[...REQUIRED_METHODS]};try{const schema=await rc().getContractSchema(CONTRACT_ADDRESS) as {methods?:Record<string,unknown>};const missing=REQUIRED_METHODS.filter(m=>!schema?.methods?.[m]);return{ok:missing.length===0,configured:true,missing}}catch{return{ok:false,configured:true,missing:[...REQUIRED_METHODS]}}}
-export const getWorld=(id:number)=>performRead(()=>rc().readContract({address:address(),functionName:"get_world",args:[BigInt(id)]}),parseWorld,"get_world");
-export const getBranch=(id:number)=>performRead(()=>rc().readContract({address:address(),functionName:"get_branch",args:[BigInt(id)]}),parseBranch,"get_branch");
-export const getEntry=(id:number)=>performRead(()=>rc().readContract({address:address(),functionName:"get_entry",args:[BigInt(id)]}),parseEntry,"get_entry");
-export const getProposal=(id:number)=>performRead(()=>rc().readContract({address:address(),functionName:"get_proposal",args:[BigInt(id)]}),parseProposal,"get_proposal");
-export const getStats=()=>performRead(()=>rc().readContract({address:address(),functionName:"stats",args:[]}),parseStats,"stats");
-export const previewRelated=(proposalId:number,k=8)=>performRead(()=>rc().readContract({address:address(),functionName:"preview_related",args:[BigInt(proposalId),BigInt(k)]}),parseRelatedArray,"preview_related");
-export const searchCanon=(worldId:number,branchId:number,query:string,k=8)=>performRead(()=>rc().readContract({address:address(),functionName:"search_canon",args:[BigInt(worldId),BigInt(branchId),query,BigInt(k)]}),parseRelatedArray,"search_canon");
-async function ids(functionName:string,args:CalldataEncodable[]){return performRead(()=>rc().readContract({address:address(),functionName,args}),parseIntArray,functionName)}
-async function hydrate<T>(result:ReadResult<number[]>,getter:(id:number)=>Promise<ReadResult<T>>):Promise<ReadResult<T[]>>{if(result.kind!=="AVAILABLE")return result as ReadResult<T[]>;const rows:T[]=[];for(const id of result.value){const row=await getter(id);if(row.kind==="AVAILABLE")rows.push(row.value);else if(row.kind==="UNAVAILABLE")return row as ReadResult<T[]>}return available(rows)}
-export async function listWorlds(offset=0,limit=50){return hydrate(await ids("list_world_ids",[BigInt(offset),BigInt(limit)]),getWorld)}
-export async function listBranches(worldId:number,offset=0,limit=50){return hydrate(await ids("list_branch_ids",[BigInt(worldId),BigInt(offset),BigInt(limit)]),getBranch)}
-export async function listWorldEntries(worldId:number,offset=0,limit=50){return hydrate(await ids("list_world_entry_ids",[BigInt(worldId),BigInt(offset),BigInt(limit)]),getEntry)}
-export async function listBranchEntries(branchId:number,offset=0,limit=50){return hydrate(await ids("list_branch_entry_ids",[BigInt(branchId),BigInt(offset),BigInt(limit)]),getEntry)}
-export async function listWorldProposals(worldId:number,offset=0,limit=50){return hydrate(await ids("list_world_proposal_ids",[BigInt(worldId),BigInt(offset),BigInt(limit)]),getProposal)}
-export async function listBranchProposals(branchId:number,offset=0,limit=50){return hydrate(await ids("list_branch_proposal_ids",[BigInt(branchId),BigInt(offset),BigInt(limit)]),getProposal)}
-export async function listEntityEntries(worldId:number,entityKey:string,offset=0,limit=50){return hydrate(await ids("list_entity_entry_ids",[BigInt(worldId),entityKey,BigInt(offset),BigInt(limit)]),getEntry)}
-export async function isEditor(worldId:number,wallet:string){return performRead(()=>rc().readContract({address:address(),functionName:"is_editor",args:[BigInt(worldId),wallet]}),v=>typeof v==="boolean"?v:undefined,"is_editor")}
+export const getWorld=(id:number)=>performRead(()=>canonicalRead("get_world",[BigInt(id)]),parseWorld,"get_world");
+export const getBranch=(id:number)=>performRead(()=>canonicalRead("get_branch",[BigInt(id)]),parseBranch,"get_branch");
+export const getEntry=(id:number)=>performRead(()=>canonicalRead("get_entry",[BigInt(id)]),parseEntry,"get_entry");
+export const getProposal=(id:number)=>performRead(()=>canonicalRead("get_proposal",[BigInt(id)]),parseProposal,"get_proposal");
+export const getStats=()=>performRead(()=>canonicalRead("stats",[]),parseStats,"stats");
+export const previewRelated=(proposalId:number,k=8)=>performRead(()=>canonicalRead("preview_related",[BigInt(proposalId),BigInt(k)]),parseRelatedArray,"preview_related");
+export const searchCanon=(worldId:number,branchId:number,query:string,k=8)=>performRead(()=>canonicalRead("search_canon",[BigInt(worldId),BigInt(branchId),query,BigInt(k)]),parseRelatedArray,"search_canon");
+async function ids(functionName:string,args:CalldataEncodable[]){return performRead(()=>canonicalRead(functionName,args),parseIntArray,functionName)}
+async function hydrate<T>(result:ReadResult<number[]>,getter:(id:number)=>Promise<ReadResult<T>>,label:string):Promise<ReadResult<T[]>>{if(result.kind!=="AVAILABLE")return result as ReadResult<T[]>;const rows:T[]=[];for(const id of result.value){const row=await getter(id);if(row.kind==="AVAILABLE")rows.push(row.value);else if(row.kind==="UNAVAILABLE")return row as ReadResult<T[]>;else return unavailable(`Canonical ID list referenced ${label} ${id}, but its finalized record could not be read.`)}return available(rows)}
+export async function listWorlds(offset=0,limit=50){return hydrate(await ids("list_world_ids",[BigInt(offset),BigInt(limit)]),getWorld,"world")}
+export async function listBranches(worldId:number,offset=0,limit=50){return hydrate(await ids("list_branch_ids",[BigInt(worldId),BigInt(offset),BigInt(limit)]),getBranch,"branch")}
+export async function listWorldEntries(worldId:number,offset=0,limit=50){return hydrate(await ids("list_world_entry_ids",[BigInt(worldId),BigInt(offset),BigInt(limit)]),getEntry,"entry")}
+export async function listBranchEntries(branchId:number,offset=0,limit=50){return hydrate(await ids("list_branch_entry_ids",[BigInt(branchId),BigInt(offset),BigInt(limit)]),getEntry,"entry")}
+export async function listWorldProposals(worldId:number,offset=0,limit=50){return hydrate(await ids("list_world_proposal_ids",[BigInt(worldId),BigInt(offset),BigInt(limit)]),getProposal,"proposal")}
+export async function listBranchProposals(branchId:number,offset=0,limit=50){return hydrate(await ids("list_branch_proposal_ids",[BigInt(branchId),BigInt(offset),BigInt(limit)]),getProposal,"proposal")}
+export async function listEntityEntries(worldId:number,entityKey:string,offset=0,limit=50){return hydrate(await ids("list_entity_entry_ids",[BigInt(worldId),entityKey,BigInt(offset),BigInt(limit)]),getEntry,"entry")}
+export async function isEditor(worldId:number,wallet:string){return performRead(()=>canonicalRead("is_editor",[BigInt(worldId),wallet]),v=>typeof v==="boolean"?v:undefined,"is_editor")}
 export async function writeContract(client:WriteClient,functionName:string,args:CalldataEncodable[]){return await client.writeContract({address:address(),functionName,args,value:0n,consensusMaxRotations:3}) as TransactionHash}
 export async function waitForFinalized(client:WriteClient,hash:TransactionHash){const receipt=await client.waitForTransactionReceipt({hash,status:TransactionStatus.FINALIZED,interval:5000,retries:90});const tx=await client.getTransaction({hash});const execution=inspectGenVMExecution(tx as Parameters<typeof inspectGenVMExecution>[0]);if(execution.executionResult!=="SUCCESS")throw new Error(`Transaction finalized with ${execution.executionResult}${execution.executionError?`: ${execution.executionError}`:""}`);return{receipt,tx,...execution}}
