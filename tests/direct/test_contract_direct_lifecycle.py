@@ -6,7 +6,7 @@ import pytest
 
 
 def _new_contract(direct_vm, direct_deploy, direct_alice):
-    contract = direct_deploy("contracts/canonmesh.py")
+    contract = direct_deploy("contracts/canonmesh.py", sdk_version="v0.2.16")
     direct_vm.sender = direct_alice
     world_id = contract.create_world(
         "Vesper Archive",

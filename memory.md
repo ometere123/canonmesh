@@ -118,7 +118,7 @@ GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de
 
 - GenLayer CLI `0.39.2` is configured for built-in StudioNet; active deployer is the existing unlocked account `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
 - Full deployment receipt extraction proves `data.contract_address` matches the CLI-displayed address for both prior transactions. This rules out an incorrect predicted/displayed address as the current explanation.
-- Added 3 genuine Direct Mode contract execution tests; complete direct suite is 23 passed. Direct Mode covers deployment, state writes/reads, authorization and lifecycle invariants with mocked LLM output for nondeterministic review.
+- Added 3 genuine Direct Mode contract execution tests; complete direct suite is 23 passed using `genlayer-test 0.29.2` and pinned GenVM runner `v0.2.16`. Direct Mode covers deployment, state writes/reads, authorization and lifecycle invariants with mocked LLM output for nondeterministic review.
 - VecDB runtime API has no metadata filtering or namespace. Global top-32 retrieval followed by world/lineage filtering is bounded but can starve eligible entries ranked after 32; this is documented as a runtime limitation, not fixed with unsupported APIs.
 
 Never invent any of these.
