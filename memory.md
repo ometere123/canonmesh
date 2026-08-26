@@ -114,4 +114,11 @@ GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de
 - The repository schema script and CLI `schema`/`call` checks return `Contract ... not found` for the returned address, including after a delay. A second unchanged deployment attempt (`0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635`) also has independent EVM receipt `status: 0x1`, but its target `0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb` is likewise not registered by `gen_getContractSchema`.
 - Therefore operational contract deployment, schema verification, live lifecycle, Vercel deployment and hosted-wallet proof remain NOT PROVEN. Do not configure or publish the frontend against either address.
 
+## 2026-08-26 — Direct Mode and registration diagnosis
+
+- GenLayer CLI `0.39.2` is configured for built-in StudioNet; active deployer is the existing unlocked account `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- Full deployment receipt extraction proves `data.contract_address` matches the CLI-displayed address for both prior transactions. This rules out an incorrect predicted/displayed address as the current explanation.
+- Added 3 genuine Direct Mode contract execution tests; complete direct suite is 23 passed. Direct Mode covers deployment, state writes/reads, authorization and lifecycle invariants with mocked LLM output for nondeterministic review.
+- VecDB runtime API has no metadata filtering or namespace. Global top-32 retrieval followed by world/lineage filtering is bounded but can starve eligible entries ranked after 32; this is documented as a runtime limitation, not fixed with unsupported APIs.
+
 Never invent any of these.

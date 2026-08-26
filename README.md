@@ -108,9 +108,9 @@ Current GenLayer CLI documentation uses:
 
 ```bash
 npm install -g genlayer
-genlayer network studionet
-genlayer account show --rpc https://studio.genlayer.com/api
-genlayer deploy --contract contracts/canonmesh.py --rpc https://studio.genlayer.com/api
+genlayer network set studionet
+genlayer account show
+genlayer deploy --contract contracts/canonmesh.py
 ```
 
 Or run `scripts/deploy-studionet.sh` after configuring a supported GenLayer CLI account. The repository never creates, prints or commits private keys. The current CLI documentation describes `genlayer account create` as an encrypted-keystore flow, so this project does not invent an unsupported passwordless-account mechanism.
@@ -118,8 +118,12 @@ Or run `scripts/deploy-studionet.sh` after configuring a supported GenLayer CLI 
 Deployment status for the current release commit:
 
 - Two StudioNet deployment transactions reached finalized/receipt-success state, but StudioNet contract schema and read calls returned `Contract not found` for both CLI-returned addresses.
+- With GenLayer CLI `0.39.2`, both full receipts contained `data.contract_address` values byte-for-byte equal to the displayed addresses; no alternate receipt address was found.
+- The supported address-based CLI/SDK schema, code and `gen_call(stats())` paths all failed for both receipt addresses. This remains a reproducible registration-resolution blocker, not a successful operational deployment.
 - `DEPLOYMENT.json` records the public transaction evidence and keeps operational deployment/schema/lifecycle status explicitly unproven.
 - No frontend or hosted URL is claimed until a returned address is resolvable by `gen_getContractSchema` and authoritative reads.
+
+The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh therefore retains the bounded global top-32 scan followed by world/lineage filtering. A relevant entry beyond those 32 global neighbors can be starved; this limitation is documented and no unsupported VecDB filtering is claimed.
 
 After a real operational deployment:
 

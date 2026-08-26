@@ -38,6 +38,16 @@
 - A second deployment of the exact same frozen source returned tx `0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635`; independent EVM receipt is `status: 0x1`, but its target `0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb` is also absent from `gen_getContractSchema`.
 - This is a StudioNet/CLI deployment-registration blocker. Schema/live reads cannot be proven, so no lifecycle transactions or frontend deployment were attempted.
 
+## 2026-08-26 — Receipt address and Direct Mode follow-up
+
+- Confirmed CLI `0.39.2`, built-in `studionet` network, chain `61999`, RPC `https://studio.genlayer.com/api`, and active deployer `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- Extracted complete receipts for both prior deployments. For tx `0xe2eb9438f5b44c395a10fd2e4fe2ab690322f471cef39b648c0182223dce4831`, `data.contract_address` is `0xE386595d8Eb891e07597a6BAEad32c27E749FEc9`; for tx `0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635`, it is `0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb`. Both match their CLI-displayed addresses byte-for-byte.
+- Both receipts are `FINALIZED`, leader GenVM `SUCCESS`, and independent `eth_getTransactionReceipt` status `0x1`. Address-based CLI/SDK code, schema and `gen_call(stats())` checks still return `Contract not found`; no alternate canonical address was discovered. This is Case C registration resolution, not proven operational deployment.
+- Added genuine GenLayer Direct Mode execution coverage using `genlayer-test 0.29.2`: deployment/create-world/root branch, authorization, invalid modes/bounds, compatible acceptance, same-branch retcon supersession, branch-local shadowing, sibling isolation, semantic retrieval, and insufficient-context no-entry behavior. Full direct suite result after correction: 23 passed (20 existing + 3 new).
+- On Windows, `genlayer-test 0.29.2` has a harness cleanup bug when unlinking its still-open stdin temp file (`WinError 32`). `tests/direct/conftest.py` contains a narrowly scoped cleanup workaround; the contract remains loaded and executed by the real Direct VM.
+- VecDB source inspection found only global `knn(vector, k)` and iteration, with no metadata filter or namespace. The existing bounded global top-32 scan can starve eligible same-world entries beyond rank 32; no unsupported fix was made. This remains a documented limitation requiring either future runtime filtering or an explicitly bounded contract indexing design.
+- StudioNet schema/live reads remain NOT PROVEN; therefore no real StudioNet lifecycle, Vercel deployment or hosted-wallet write is claimed.
+
 ## 2026-08-23 — Blueprint pack
 
 Created AGENTS, PRD, TRD, architecture, UI/UX, plan, memory and handoff. No code/deployment existed yet.

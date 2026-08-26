@@ -9,6 +9,8 @@
   "source_commit":"7a6eb49fae2cabd8f865ad2a4f232987c703e3a0",
   "source_sha256":"fbc45de30aad01dd4fbf0cf5f9e8ee8bb47b923993824cc35c04a6ea9fa154f9",
   "status":"RECEIPT_VERIFIED_REGISTRATION_NOT_PROVEN",
+  "cli_version":"0.39.2",
+  "receipt_address_match":true,
   "schema_status":"NOT_PROVEN — gen_getContractSchema returns Contract not found",
   "live_read_status":"NOT_PROVEN — gen_call returns Contract not found",
   "finality":"FINALIZED",
