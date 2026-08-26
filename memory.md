@@ -10,11 +10,12 @@ It settles which bounded facts belong to which world/branch/version and which ea
 
 ## Current status
 
-- Contract + full frontend implemented.
-- Direct/source verification: **21 tests passing locally** before GitHub delivery.
-- Architecture: StudioNet contract + Vercel frontend only.
+- Contract + full frontend implemented on `main`.
+- Architecture: StudioNet Intelligent Contract + Vercel frontend only.
+- GitHub verification gate is proven green on the implemented code: preflight PASS, **20 direct/source tests passed**, TypeScript PASS, ESLint completed with warnings only, Next.js `16.3.2` production build PASS.
+- Production build generated all required CanonMesh routes.
 - StudioNet deployment: **not yet proven**.
-- Live frontend: **not yet proven**.
+- Live Vercel frontend: **not yet proven**.
 - `DEPLOYMENT.json` remains `NOT_DEPLOYED` until real public proof exists.
 
 ## Frozen engineering defaults
@@ -25,7 +26,7 @@ It settles which bounded facts belong to which world/branch/version and which ea
 - `genlayer-js@1.1.8`
 - Next.js `16.3.2`
 - React / React DOM `19.2.4`
-- TypeScript `^5`
+- TypeScript `^5`, target ES2022
 - Tailwind `^4`
 - injected wallet only for browser writes
 - VecDB `all-MiniLM-L6-v2`, 384 dimensions, Euclidean distance
@@ -69,12 +70,26 @@ Editorial story bible with marginalia rail, manuscript rules and preserved histo
 - 2026-08-23: weak/malformed evidence fails closed.
 - 2026-08-26: final architecture is contract + frontend only; old Worker/DB blueprint language is superseded.
 - 2026-08-26: same-branch retcon and branch-local inherited-canon divergence are separate protocol mechanisms.
+- 2026-08-26: TypeScript target is ES2022 because the GenLayer browser client uses native BigInt literals.
+- 2026-08-26: `react-hooks/set-state-in-effect` is warning-level because the flagged refresh effects call asynchronous contract reads before state updates; the production gate still runs ESLint and fails on actual lint errors.
+
+## Verified repository evidence
+
+GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de5aae` completed successfully:
+
+- preflight: PASS — 23 required contract methods, no backend paths
+- direct/source tests: 20 passed
+- TypeScript: PASS
+- ESLint: PASS with warnings only
+- Next production build: PASS
+- built routes: `/`, `/proposals/[proposalId]`, `/receipts/[proposalId]`, `/search`, `/worlds/[worldId]/branches`, `/worlds/[worldId]/canon`, `/worlds/[worldId]/entities/[entityKey]`, `/worlds/[worldId]/proposals/new`, `/worlds/[worldId]/timeline`
 
 ## Remaining facts to prove
 
-- GitHub CI typecheck/lint/build result
-- StudioNet contract address / deploy tx / deployer / source parity
-- real consensus lifecycle transactions
-- Vercel URL
+- StudioNet contract address / deploy transaction / deployer / source parity
+- real deterministic and consensus lifecycle transaction hashes + actual GenVM results
+- fail-closed/insufficient live path where practical
+- Vercel production URL
+- at least one hosted injected-wallet write against the deployed contract
 
 Never invent any of these.
