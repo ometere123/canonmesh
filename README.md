@@ -118,23 +118,22 @@ Or run `scripts/deploy-studionet.sh` after configuring a supported GenLayer CLI 
 
 Deployment status for the current release commit:
 
-- Current source commit `50506030388dd3570b6474d7ce02219b28ffe85b` is deployed at `0x86280023045b2801966f9561313DaeB82EdC3C74`.
-- Deployment transaction: `0x934a31d7aef2b071091505c91bb8b22407a973f7f1bf477d6140decd3e1bfd36`; deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- Current source commit `b5c339435e440c9a99a1993b061525f1d8b689fb` is deployed at `0xCb4E8279Eff17c734c3eA2e32657691610b3467A` ([explorer](https://explorer-studio.genlayer.com/address/0xCb4E8279Eff17c734c3eA2e32657691610b3467A)).
+- Deployment transaction: `0x54856986a9b0bfd1f591e5027c9c36b2960e30edb10178fb97c4f80fe7c16f63`; deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
 - The receipt address matches the CLI address. It reached `FINALIZED`, leader GenVM execution was `SUCCESS`, and the independent StudioNet EVM receipt status was `0x1`.
-- Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `d19575da9f1e5d1f090cde62eb852377887adb588b729ae013b07f959c2fd71a`.
+- Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e`.
 - The earlier unresolved deployments remain historical evidence only; they are not release proof for this hardened source.
+- Final-source live proof includes world creation, root/child branch, evidence-bound COMPATIBLE canon, semantic retrieval. The remaining branch/retcon/negative-path transactions are listed as `NOT PROVEN` unless independently recorded in `DEPLOYMENT.json`.
 - Remote Studio Mode and hosted Vercel deployment remain `NOT PROVEN` in this environment.
 
 The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh therefore retains the bounded global top-32 scan followed by world/lineage filtering. A relevant entry beyond those 32 global neighbors can be starved; this limitation is documented and no unsupported VecDB filtering is claimed.
 
-After a real operational deployment:
+For the current operational deployment:
 
-1. verify the deployment receipt/execution;
-2. set `NEXT_PUBLIC_CANONMESH_CONTRACT`;
-3. run `npm run verify:schema`;
-4. run `npm run verify:studionet`;
-5. exercise the canonical demo lifecycle with real StudioNet writes;
-6. update `DEPLOYMENT.json`, `memory.md` and `handoff.md` with public proof only.
+1. set `NEXT_PUBLIC_CANONMESH_CONTRACT` to the verified address;
+2. run `npm run verify:schema` and `npm run verify:studionet`;
+3. keep deployment source parity green with `npm run verify:deployment-source`;
+4. consult `DEPLOYMENT.json` for the exact public transaction evidence.
 
 ## Canon decision model
 

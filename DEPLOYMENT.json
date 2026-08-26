@@ -3,11 +3,19 @@
   "chain_id":61999,
   "rpc":"https://studio.genlayer.com/api",
   "explorer":"https://explorer-studio.genlayer.com",
-  "contract_address":"0x86280023045b2801966f9561313DaeB82EdC3C74",
-  "deployment_transaction":"0x934a31d7aef2b071091505c91bb8b22407a973f7f1bf477d6140decd3e1bfd36",
+  "contract_address":"0xCb4E8279Eff17c734c3eA2e32657691610b3467A",
+  "deployment_transaction":"0x54856986a9b0bfd1f591e5027c9c36b2960e30edb10178fb97c4f80fe7c16f63",
   "deployer":"0xb29Ead15B1E8A2420faE84de974088f67a15ccC2",
-  "source_commit":"50506030388dd3570b6474d7ce02219b28ffe85b",
-  "source_sha256":"d19575da9f1e5d1f090cde62eb852377887adb588b729ae013b07f959c2fd71a",
+  "source_commit":"b5c339435e440c9a99a1993b061525f1d8b689fb",
+  "source_sha256":"8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e",
+  "repository_head":"b5c339435e440c9a99a1993b061525f1d8b689fb",
+  "deployed_source_commit":"b5c339435e440c9a99a1993b061525f1d8b689fb",
+  "deployed_contract_sha256":"8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e",
+  "current_contract_sha256":"8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e",
+  "contract_source_matches_deployment":true,
+  "frontend_url":null,
+  "hosted_write_tx":null,
+  "verified_at":"2026-08-26",
   "status":"OPERATIONAL_SCHEMA_CODE_READ_VERIFIED",
   "cli_version":"0.39.2",
   "receipt_address_match":true,
@@ -18,7 +26,7 @@
   "evm_receipt_status":"0x1",
   "code_status":"PASS — CLI code lookup resolves exact receipt address",
   "studio_rpc_receipt_status":"0x1",
-  "additional_attempts":[
+  "historical_attempts":[
     {
       "deployment_transaction":"0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635",
       "reported_contract_address":"0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb",
@@ -26,8 +34,8 @@
       "registration_status":"NOT_FOUND"
     }
   ],
-  "lifecycle_proof":[
-    {"scenario":"create_world","tx":"0xbc1e7298d2506732246be06ab0f4f580be085f9f03a7bbf6020b17dee0b25c50","status":"FINALIZED","genvm":"SUCCESS","state":"world_count=1, root branch=1"},
+  "previous_release_lifecycle_proof":[
+    {"scenario":"create_world","tx":"0xbc1e7298d2506732246be06ab0f4f580be085f9f03a7bbf6020b17dee0b25c50","status":"FINALIZED","genvm":"SUCCESS","state":"world_count=1, root branch=1; historical deployment only"},
     {"scenario":"create_child_branch","tx":"0x2c309e82d31da739b73873d44d9d41209da529d8eff65a50e8c74b13e943df80","status":"FINALIZED","genvm":"SUCCESS","state":"branch_count=2, child branch=2"},
     {"scenario":"submit_proposal","tx":"0xc2b553e5b759dd15fa6f2fc5986e4ea293c31f1808d3d3700ca50d89b872ab4b","status":"FINALIZED","genvm":"SUCCESS","state":"proposal_count=1, proposal=1"},
     {"scenario":"review_compatible","tx":"0xd6867982769a30f2832ca93b03cd44a8172edd018d240d98041f520803a2598f","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1 COMPATIBLE, resulting_entry=1, entry_count=1"},
@@ -37,6 +45,12 @@
     {"scenario":"review_branch_only","tx":"0xc20cc1dd68ff2c841ce03f0c612d2bbe8467cd271fe1e776984eef6d44a225dd","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=3 BRANCH_ONLY, resulting_entry=2, overrides=[1]"},
     {"scenario":"submit_retcon","tx":"0x05ad69aba423fb8ad9e304d96a1254a8d921d3b6bb7d09f833f3182e76b20109","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=4 on branch=1"},
     {"scenario":"review_retcon","tx":"0x6230c4ec7494c35a28978df0511175027ae0df022d2d8c7f2b8424c083076401","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=4 RETCON_VALID, resulting_entry=3, entry=1 superseded_by=3"}
+  ],
+  "final_release_lifecycle_proof":[
+    {"scenario":"create_world","tx":"0xa259a16ff111c9f54d231359c34b3092abd40355d187763e8e1f6ecbe331784b","status":"FINALIZED","genvm":"SUCCESS","state":"world=1, root_branch=1"},
+    {"scenario":"create_child_branch","tx":"0x5968c462d853bb6ea41162aad1eea0d903070bd14d29f0ac3ebb5f9db1768031","status":"FINALIZED","genvm":"SUCCESS","state":"branch=2, parent=1"},
+    {"scenario":"submit_initial_canon","tx":"0x235e05096ec18f765da5c4bd05fb1ea3fe4021f2d2ec7d162b66a434d0ced334","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1, entity_keys=[]; authoritative submission"},
+    {"scenario":"review_initial_canon","tx":"0x5ab893d835b64e0878ed24e194a61bbba51250e1a6c6353e91526f4b877aa8de","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1 COMPATIBLE, resulting_entry=1"}
   ],
   "note":"Fresh deployment is from the current hardened source commit. GenLayer receipt is FINALIZED with leader SUCCESS; independent StudioNet RPC receipt is 0x1; exact receipt address, code, schema, and stats() resolve. Previous older-source attempts remain historical only."
 }
