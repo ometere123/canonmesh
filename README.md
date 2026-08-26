@@ -118,11 +118,12 @@ Or run `scripts/deploy-studionet.sh` after configuring a supported GenLayer CLI 
 
 Deployment status for the current release commit:
 
-- Two StudioNet deployment transactions reached finalized/receipt-success state, but StudioNet contract schema and read calls returned `Contract not found` for both CLI-returned addresses.
-- With GenLayer CLI `0.39.2`, both full receipts contained `data.contract_address` values byte-for-byte equal to the displayed addresses; no alternate receipt address was found.
-- The supported address-based CLI/SDK schema, code and `gen_call(stats())` paths all failed for both receipt addresses. This remains a reproducible registration-resolution blocker, not a successful operational deployment.
-- `DEPLOYMENT.json` records the public transaction evidence and keeps operational deployment/schema/lifecycle status explicitly unproven.
-- No frontend or hosted URL is claimed until a returned address is resolvable by `gen_getContractSchema` and authoritative reads.
+- Current source commit `50506030388dd3570b6474d7ce02219b28ffe85b` is deployed at `0x86280023045b2801966f9561313DaeB82EdC3C74`.
+- Deployment transaction: `0x934a31d7aef2b071091505c91bb8b22407a973f7f1bf477d6140decd3e1bfd36`; deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- The receipt address matches the CLI address. It reached `FINALIZED`, leader GenVM execution was `SUCCESS`, and the independent StudioNet EVM receipt status was `0x1`.
+- Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `d19575da9f1e5d1f090cde62eb852377887adb588b729ae013b07f959c2fd71a`.
+- The earlier unresolved deployments remain historical evidence only; they are not release proof for this hardened source.
+- Remote Studio Mode and hosted Vercel deployment remain `NOT PROVEN` in this environment.
 
 The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh therefore retains the bounded global top-32 scan followed by world/lineage filtering. A relevant entry beyond those 32 global neighbors can be starved; this limitation is documented and no unsupported VecDB filtering is claimed.
 

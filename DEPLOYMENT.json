@@ -32,7 +32,11 @@
     {"scenario":"submit_proposal","tx":"0xc2b553e5b759dd15fa6f2fc5986e4ea293c31f1808d3d3700ca50d89b872ab4b","status":"FINALIZED","genvm":"SUCCESS","state":"proposal_count=1, proposal=1"},
     {"scenario":"review_compatible","tx":"0xd6867982769a30f2832ca93b03cd44a8172edd018d240d98041f520803a2598f","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1 COMPATIBLE, resulting_entry=1, entry_count=1"},
     {"scenario":"semantic_retrieval","method":"search_canon","state":"PASS — entry 1 returned for bell dusk"},
-    {"scenario":"create_grandchild_branch","tx":"0x37489f8c24098be2d0481a6e7bebf9e9ae60ec3a73dfb030281caa06f7e06339","status":"FINALIZED","genvm":"SUCCESS","state":"branch_count=3, grandchild branch=3"}
+    {"scenario":"create_grandchild_branch","tx":"0x37489f8c24098be2d0481a6e7bebf9e9ae60ec3a73dfb030281caa06f7e06339","status":"FINALIZED","genvm":"SUCCESS","state":"branch_count=3, grandchild branch=3"},
+    {"scenario":"submit_branch_only","tx":"0xc06334c81996be66ebb97f7de3ed667e6454ee0f7a5b5c9f956845ace0f1c888","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=3 on branch=2"},
+    {"scenario":"review_branch_only","tx":"0xc20cc1dd68ff2c841ce03f0c612d2bbe8467cd271fe1e776984eef6d44a225dd","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=3 BRANCH_ONLY, resulting_entry=2, overrides=[1]"},
+    {"scenario":"submit_retcon","tx":"0x05ad69aba423fb8ad9e304d96a1254a8d921d3b6bb7d09f833f3182e76b20109","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=4 on branch=1"},
+    {"scenario":"review_retcon","tx":"0x6230c4ec7494c35a28978df0511175027ae0df022d2d8c7f2b8424c083076401","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=4 RETCON_VALID, resulting_entry=3, entry=1 superseded_by=3"}
   ],
   "note":"Fresh deployment is from the current hardened source commit. GenLayer receipt is FINALIZED with leader SUCCESS; independent StudioNet RPC receipt is 0x1; exact receipt address, code, schema, and stats() resolve. Previous older-source attempts remain historical only."
 }
