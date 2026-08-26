@@ -115,7 +115,13 @@ genlayer deploy --contract contracts/canonmesh.py --rpc https://studio.genlayer.
 
 Or run `scripts/deploy-studionet.sh` after configuring a supported GenLayer CLI account. The repository never creates, prints or commits private keys. The current CLI documentation describes `genlayer account create` as an encrypted-keystore flow, so this project does not invent an unsupported passwordless-account mechanism.
 
-After a real deployment:
+Deployment status for the current release commit:
+
+- Two StudioNet deployment transactions reached finalized/receipt-success state, but StudioNet contract schema and read calls returned `Contract not found` for both CLI-returned addresses.
+- `DEPLOYMENT.json` records the public transaction evidence and keeps operational deployment/schema/lifecycle status explicitly unproven.
+- No frontend or hosted URL is claimed until a returned address is resolvable by `gen_getContractSchema` and authoritative reads.
+
+After a real operational deployment:
 
 1. verify the deployment receipt/execution;
 2. set `NEXT_PUBLIC_CANONMESH_CONTRACT`;

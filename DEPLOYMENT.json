@@ -3,11 +3,24 @@
   "chain_id":61999,
   "rpc":"https://studio.genlayer.com/api",
   "explorer":"https://explorer-studio.genlayer.com",
-  "contract_address":null,
-  "deployment_transaction":null,
-  "deployer":null,
-  "source_commit":null,
-  "source_sha256":null,
-  "status":"NOT_DEPLOYED",
-  "note":"Populate only after a real StudioNet deployment and GenVM execution verification."
+  "contract_address":"0xE386595d8Eb891e07597a6BAEad32c27E749FEc9",
+  "deployment_transaction":"0xe2eb9438f5b44c395a10fd2e4fe2ab690322f471cef39b648c0182223dce4831",
+  "deployer":"0xb29Ead15B1E8A2420faE84de974088f67a15ccC2",
+  "source_commit":"7a6eb49fae2cabd8f865ad2a4f232987c703e3a0",
+  "source_sha256":"fbc45de30aad01dd4fbf0cf5f9e8ee8bb47b923993824cc35c04a6ea9fa154f9",
+  "status":"RECEIPT_VERIFIED_REGISTRATION_NOT_PROVEN",
+  "schema_status":"NOT_PROVEN — gen_getContractSchema returns Contract not found",
+  "live_read_status":"NOT_PROVEN — gen_call returns Contract not found",
+  "finality":"FINALIZED",
+  "genvm_execution_result":"SUCCESS",
+  "evm_receipt_status":"0x1",
+  "additional_attempts":[
+    {
+      "deployment_transaction":"0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635",
+      "reported_contract_address":"0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb",
+      "evm_receipt_status":"0x1",
+      "registration_status":"NOT_FOUND"
+    }
+  ],
+  "note":"GenLayer receipt and independent EVM receipt prove transaction finality/execution for the first attempt, but StudioNet schema/call lookup cannot resolve the returned contract address. Do not use this address for release."
 }

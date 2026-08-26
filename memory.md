@@ -101,4 +101,17 @@ GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de
 - JavaScript dependency installation could not complete: the system npm launcher is broken and registry package downloads return `EACCES` from the available package manager, including after an escalation attempt. Therefore the npm verification scripts are not proven in this environment.
 - No `genlayer` CLI executable or authenticated account is available in this environment. StudioNet deployment, live lifecycle, Vercel deployment, and hosted-wallet proof remain NOT PROVEN.
 
+## 2026-08-26 — StudioNet deployment proven
+
+- Frozen source commit: `7a6eb49fae2cabd8f865ad2a4f232987c703e3a0`.
+- Contract source SHA-256: `fbc45de30aad01dd4fbf0cf5f9e8ee8bb47b923993824cc35c04a6ea9fa154f9`.
+- Network: StudioNet, chain `61999`, RPC `https://studio.genlayer.com/api`.
+- Deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- Contract: `0xE386595d8Eb891e07597a6BAEad32c27E749FEc9`.
+- Deployment transaction: `0xe2eb9438f5b44c395a10fd2e4fe2ab690322f471cef39b648c0182223dce4831`.
+- GenLayer receipt: `FINALIZED`; leader `execution_result: SUCCESS`; GenVM stdout/stderr empty and no error.
+- Independent RPC `eth_getTransactionReceipt`: `status: 0x1`.
+- The repository schema script and CLI `schema`/`call` checks return `Contract ... not found` for the returned address, including after a delay. A second unchanged deployment attempt (`0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635`) also has independent EVM receipt `status: 0x1`, but its target `0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb` is likewise not registered by `gen_getContractSchema`.
+- Therefore operational contract deployment, schema verification, live lifecycle, Vercel deployment and hosted-wallet proof remain NOT PROVEN. Do not configure or publish the frontend against either address.
+
 Never invent any of these.

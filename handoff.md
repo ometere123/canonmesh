@@ -22,6 +22,22 @@
 - Required JavaScript install is NOT PROVEN because the system npm launcher is broken and package downloads return `EACCES` from the available package manager, including with escalation.
 - StudioNet deployment is BLOCKED in this environment: no `genlayer` executable and no authenticated supported CLI account are available. No deployment facts or lifecycle claims were made.
 
+## 2026-08-26 — StudioNet deployment proof
+
+- Using the supported `npm.cmd` CLI path, selected built-in StudioNet and used the existing unlocked account `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- Deployed frozen commit `7a6eb49fae2cabd8f865ad2a4f232987c703e3a0`; contract source SHA-256 is `fbc45de30aad01dd4fbf0cf5f9e8ee8bb47b923993824cc35c04a6ea9fa154f9`.
+- Deployment tx: `0xe2eb9438f5b44c395a10fd2e4fe2ab690322f471cef39b648c0182223dce4831`.
+- Contract address: `0xE386595d8Eb891e07597a6BAEad32c27E749FEc9`.
+- GenLayer receipt: `FINALIZED`; leader GenVM execution `SUCCESS`; stdout/stderr empty; no execution error.
+- Independent StudioNet RPC receipt returned `status: 0x1`.
+- Next exact action: set `NEXT_PUBLIC_CANONMESH_CONTRACT` to the deployed address, run schema/live-read checks, then execute and record every real lifecycle transaction with authoritative state re-reads.
+
+## 2026-08-26 — Deployment registration blocker
+
+- The first deployment transaction is receipt-verified (`FINALIZED`, leader `SUCCESS`, independent EVM `status: 0x1`) but `gen_getContractSchema`, `gen_getContractCode`, and `gen_call` all return `Contract 0xe386595d8eb891e07597a6baead32c27e749fec9 not found`.
+- A second deployment of the exact same frozen source returned tx `0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635`; independent EVM receipt is `status: 0x1`, but its target `0x8Ca88ECbA344892a0e1f281c4c025897094dD8Bb` is also absent from `gen_getContractSchema`.
+- This is a StudioNet/CLI deployment-registration blocker. Schema/live reads cannot be proven, so no lifecycle transactions or frontend deployment were attempted.
+
 ## 2026-08-23 — Blueprint pack
 
 Created AGENTS, PRD, TRD, architecture, UI/UX, plan, memory and handoff. No code/deployment existed yet.
