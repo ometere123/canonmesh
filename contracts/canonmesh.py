@@ -401,17 +401,20 @@ RELATED_ACTIVE_CANON: %s""" % (
             decision = str(raw.get("decision", "")).upper()
             if decision not in DECISIONS: decision = DEC_INSUFFICIENT
             related_by_id = {int(item["entry_id"]): item for item in snapshot["related"]}
-            try: duplicate_of = int(raw.get("duplicate_of", 0))
-            except Exception: duplicate_of = -1
+            proposal_keys = set(json.loads(proposal.entity_keys_json))
+            raw_duplicate = raw.get("duplicate_of", 0)
+            duplicate_of = raw_duplicate if type(raw_duplicate) is int and raw_duplicate >= 0 else -1
             duplicate_meta = related_by_id.get(duplicate_of)
             if duplicate_of != 0 and (duplicate_meta is None or int(duplicate_meta["branch_id"]) not in [int(x) for x in self._lineage(proposal.branch_id)]):
                 duplicate_of = -1
+            if duplicate_of > 0:
+                target_keys = set(json.loads(duplicate_meta["entity_keys_json"]))
+                if proposal_keys and target_keys and not proposal_keys.intersection(target_keys): duplicate_of = -1
             if duplicate_of == -1:
                 decision = DEC_INSUFFICIENT
                 duplicate_of = 0
             elif duplicate_of != 0:
                 decision = DEC_INSUFFICIENT
-            proposal_keys = set(json.loads(proposal.entity_keys_json))
             def target_set(raw_targets, expected_branch_ids):
                 if not isinstance(raw_targets, list) or len(raw_targets) > MAX_RELATED: return [], False
                 values = []
@@ -429,10 +432,11 @@ RELATED_ACTIVE_CANON: %s""" % (
             if not supersedes_valid or not branch_overrides_valid:
                 decision, supersedes, branch_overrides = DEC_INSUFFICIENT, [], []
             supersedes.sort(); branch_overrides.sort()
-            if decision == DEC_RETCON and (snapshot["mode"] != MODE_RETCON or not supersedes): decision, supersedes = DEC_INSUFFICIENT, []
-            if decision == DEC_BRANCH and (snapshot["mode"] != MODE_BRANCH or snapshot["parent_branch_id"] == 0 or not branch_overrides): decision, branch_overrides = DEC_INSUFFICIENT, []
-            if decision != DEC_RETCON: supersedes = []
-            if decision != DEC_BRANCH: branch_overrides = []
+            forbidden = ((decision in [DEC_COMPATIBLE, DEC_CONFLICT, DEC_INSUFFICIENT]) and (supersedes or branch_overrides))
+            forbidden = forbidden or (decision == DEC_CONFLICT and duplicate_of != 0)
+            forbidden = forbidden or (decision == DEC_RETCON and (snapshot["mode"] != MODE_RETCON or not supersedes or branch_overrides))
+            forbidden = forbidden or (decision == DEC_BRANCH and (snapshot["mode"] != MODE_BRANCH or snapshot["parent_branch_id"] == 0 or not branch_overrides or supersedes))
+            if forbidden: decision, supersedes, branch_overrides = DEC_INSUFFICIENT, [], []
             return {"ok": True, "decision": decision, "supersedes": supersedes, "branch_overrides": branch_overrides, "duplicate_of": duplicate_of,
                 "rationale": " ".join(str(raw.get("rationale", "")).split())[:MAX_REASONING],
                 "evidence_summary": " ".join(str(raw.get("evidence_summary", "")).split())[:MAX_REASONING]}
@@ -442,12 +446,18 @@ RELATED_ACTIVE_CANON: %s""" % (
             leader = leader_result.calldata
             if not isinstance(leader, dict) or not bool(leader.get("ok", False)): return False
             own = leader_fn()
+            leader_duplicate = leader.get("duplicate_of", 0)
+            if type(leader_duplicate) is not int or leader_duplicate < 0: return False
+            leader_supersedes = leader.get("supersedes", [])
+            leader_overrides = leader.get("branch_overrides", [])
+            if not isinstance(leader_supersedes, list) or not isinstance(leader_overrides, list): return False
+            if any(type(x) is not int or x <= 0 for x in leader_supersedes + leader_overrides): return False
             if leader.get("decision") != own.get("decision"): return False
-            if int(leader.get("duplicate_of", 0)) != int(own.get("duplicate_of", 0)): return False
+            if leader_duplicate != own.get("duplicate_of", 0): return False
             if leader.get("decision") == DEC_RETCON:
-                return [int(x) for x in leader.get("supersedes", [])] == [int(x) for x in own.get("supersedes", [])]
+                return leader_supersedes == own.get("supersedes", [])
             if leader.get("decision") == DEC_BRANCH:
-                return [int(x) for x in leader.get("branch_overrides", [])] == [int(x) for x in own.get("branch_overrides", [])]
+                return leader_overrides == own.get("branch_overrides", [])
             return True
         return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
 
@@ -560,39 +570,51 @@ RELATED_ACTIVE_CANON: %s""" % (
         if decision not in DECISIONS: raise gl.vm.UserError("TRANSIENT: invalid consensus decision")
         related_ids = [int(item["entry_id"]) for item in related]
         supersedes, branch_overrides = [], []
+        raw_supersedes = verdict.get("supersedes", [])
+        raw_branch_overrides = verdict.get("branch_overrides", [])
+        if not isinstance(raw_supersedes, list) or not isinstance(raw_branch_overrides, list): raise gl.vm.UserError("TRANSIENT: malformed consensus envelope")
+        raw_duplicate = verdict.get("duplicate_of", 0)
+        if type(raw_duplicate) is not int or raw_duplicate < 0: raise gl.vm.UserError("TRANSIENT: invalid duplicate reference")
+        if raw_duplicate > 0:
+            duplicate_meta = {int(item["entry_id"]): item for item in related}.get(raw_duplicate)
+            if duplicate_meta is None or int(duplicate_meta["branch_id"]) not in [int(x) for x in self._lineage(proposal.branch_id)]: raise gl.vm.UserError("TRANSIENT: duplicate reference outside frozen semantic context")
+            proposal_keys = set(json.loads(proposal.entity_keys_json)); target_keys = set(json.loads(duplicate_meta["entity_keys_json"]))
+            if proposal_keys and target_keys and not proposal_keys.intersection(target_keys): raise gl.vm.UserError("TRANSIENT: duplicate reference has different entity identity")
         if decision == DEC_RETCON:
             if proposal.mode != MODE_RETCON: raise gl.vm.UserError("TRANSIENT: RETCON_VALID incompatible with proposal mode")
-            raw_targets = verdict.get("supersedes", [])
+            raw_targets = raw_supersedes
             if not isinstance(raw_targets, list) or not raw_targets or len(raw_targets) > MAX_RELATED: raise gl.vm.UserError("TRANSIENT: invalid retcon target set")
             for raw in raw_targets:
-                target_id = int(raw)
+                if type(raw) is not int: raise gl.vm.UserError("TRANSIENT: malformed retcon target")
+                target_id = raw
                 if target_id not in related_ids or target_id in supersedes: raise gl.vm.UserError("TRANSIENT: retcon target outside frozen semantic context")
                 target = self._entry(u256(target_id))
                 if target.world_id != proposal.world_id or target.branch_id != proposal.branch_id or target.superseded_by != ZERO:
                     raise gl.vm.UserError("TRANSIENT: retcon target must be active canon in the same branch")
                 supersedes.append(target_id)
             supersedes.sort()
-        elif verdict.get("supersedes", []): raise gl.vm.UserError("TRANSIENT: only RETCON_VALID may supersede canon")
+        elif raw_supersedes: raise gl.vm.UserError("TRANSIENT: only RETCON_VALID may supersede canon")
         if decision == DEC_BRANCH:
             if proposal.mode != MODE_BRANCH or branch.parent_branch_id == ZERO: raise gl.vm.UserError("TRANSIENT: BRANCH_ONLY incompatible with proposal")
-            raw_overrides = verdict.get("branch_overrides", [])
+            raw_overrides = raw_branch_overrides
             if not isinstance(raw_overrides, list) or not raw_overrides or len(raw_overrides) > MAX_RELATED: raise gl.vm.UserError("TRANSIENT: invalid branch override set")
             ancestor_ids = [int(x) for x in self._lineage(proposal.branch_id)[1:]]
             for raw in raw_overrides:
-                target_id = int(raw)
+                if type(raw) is not int: raise gl.vm.UserError("TRANSIENT: malformed branch override target")
+                target_id = raw
                 if target_id not in related_ids or target_id in branch_overrides: raise gl.vm.UserError("TRANSIENT: branch override outside frozen semantic context")
                 target = self._entry(u256(target_id))
                 if target.world_id != proposal.world_id or int(target.branch_id) not in ancestor_ids or target.superseded_by != ZERO:
                     raise gl.vm.UserError("TRANSIENT: branch override must target active inherited canon")
                 branch_overrides.append(target_id)
             branch_overrides.sort()
-        elif verdict.get("branch_overrides", []): raise gl.vm.UserError("TRANSIENT: only BRANCH_ONLY may override inherited canon")
+        elif raw_branch_overrides: raise gl.vm.UserError("TRANSIENT: only BRANCH_ONLY may override inherited canon")
         status_map = {DEC_COMPATIBLE: COMPATIBLE, DEC_RETCON: RETCON_VALID, DEC_BRANCH: BRANCH_ONLY, DEC_CONFLICT: CONFLICT, DEC_INSUFFICIENT: INSUFFICIENT}
         proposal.status = u8(status_map[decision]); proposal.decision = decision
         proposal.related_ids_json = json.dumps(related_ids, separators=(",", ":"))
         proposal.supersedes_json = json.dumps(supersedes, separators=(",", ":"))
         proposal.branch_overrides_json = json.dumps(branch_overrides, separators=(",", ":"))
-        proposal.duplicate_of = u256(int(verdict.get("duplicate_of", 0)))
+        proposal.duplicate_of = u256(raw_duplicate)
         proposal.rationale = self._bounded(str(verdict.get("rationale", "")), "rationale", MAX_REASONING, False)
         proposal.evidence_summary = self._bounded(str(verdict.get("evidence_summary", "")), "evidence summary", MAX_REASONING, False)
         proposal.reviewed_at = self._now()

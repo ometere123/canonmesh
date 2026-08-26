@@ -271,6 +271,38 @@ def test_invalid_duplicate_reference_fails_closed(
     assert contract.get_proposal(proposal)["duplicate_of"] == 0
 
 
+@pytest.mark.parametrize(
+    "decision,extra",
+    [
+        ("COMPATIBLE", {"supersedes": [1]}),
+        ("COMPATIBLE", {"branch_overrides": [1]}),
+        ("CONFLICT", {"duplicate_of": 1}),
+        ("RETCON_VALID", {"supersedes": [1], "branch_overrides": [1]}),
+    ],
+)
+def test_forbidden_consensus_fields_cannot_be_repaired(
+    direct_vm, direct_deploy, direct_alice, decision, extra
+):
+    contract, world_id, root_id = _new_contract(direct_vm, direct_deploy, direct_alice)
+    initial = _submit(contract, world_id, root_id, "ADD", "Envelope", "A bounded envelope fact.")
+    assert _review_as(contract, direct_vm, initial, "COMPATIBLE") == "COMPATIBLE"
+    mode = "RETCON" if decision == "RETCON_VALID" else "ADD"
+    proposal = _submit(contract, world_id, root_id, mode, "Malformed envelope", "Must fail closed.")
+    direct_vm.clear_mocks()
+    assert _review_as(contract, direct_vm, proposal, decision, **extra) == "INSUFFICIENT_CONTEXT"
+    assert contract.stats()["entry_count"] == 1
+
+
+@pytest.mark.parametrize("duplicate", [True, False, "1", 1.0, 1.5, -1, [], {}, None])
+def test_duplicate_reference_requires_strict_integer(
+    direct_vm, direct_deploy, direct_alice, duplicate
+):
+    contract, world_id, root_id = _new_contract(direct_vm, direct_deploy, direct_alice)
+    proposal = _submit(contract, world_id, root_id, "ADD", "Strict duplicate", "Must reject coercion.")
+    assert _review_as(contract, direct_vm, proposal, "COMPATIBLE", duplicate_of=duplicate) == "INSUFFICIENT_CONTEXT"
+    assert contract.stats()["entry_count"] == 0
+
+
 def test_second_lineage_check_blocks_mutation_after_consensus(
     direct_vm, direct_deploy, direct_alice
 ):
