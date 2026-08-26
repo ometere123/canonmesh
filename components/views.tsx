@@ -645,8 +645,10 @@ export function BranchMap({ worldId }: { worldId: number }) {
   const refresh = useCallback(async () => {
     const r = await listBranches(worldId);
     setBranches(r);
-    if (r.kind === "AVAILABLE" && r.value.length && !parent)
-      setParent(r.value[0].id);
+    if (r.kind === "AVAILABLE" && !parent) {
+      const firstEligible = r.value.find((candidate) => effectiveBranchActivity(candidate.id, r.value));
+      if (firstEligible) setParent(firstEligible.id);
+    }
   }, [parent, worldId]);
   useEffect(() => {
     queueMicrotask(() => void refresh());
@@ -798,7 +800,10 @@ export function ProposalComposer({ worldId }: { worldId: number }) {
   useEffect(() => {
     void listBranches(worldId).then((r) => {
       setBranches(r);
-      if (r.kind === "AVAILABLE" && r.value.length) setBranch(r.value[0].id);
+      if (r.kind === "AVAILABLE") {
+        const firstEligible = r.value.find((candidate) => effectiveBranchActivity(candidate.id, r.value));
+        if (firstEligible) setBranch(firstEligible.id);
+      }
     });
   }, [worldId]);
   useEffect(() => {
@@ -1024,11 +1029,16 @@ export function ProposalReview({ proposalId }: { proposalId: number }) {
       const supersededEntries = await Promise.all(superseded);
       if (supersededEntries.some((entry) => entry.kind !== "AVAILABLE"))
         throw new Error("Superseded canon state could not be confirmed.");
+      const overrides = ids(confirmed.value.branch_overrides_json).map((id) => getEntry(id));
+      const overrideEntries = await Promise.all(overrides);
+      if (overrideEntries.some((entry) => entry.kind !== "AVAILABLE"))
+        throw new Error("Branch override state could not be confirmed.");
       if (!confirmReviewedProposal(
         confirmed.value,
         confirmed.value.mode,
         resulting?.kind === "AVAILABLE" ? resulting.value : undefined,
         supersededEntries.map((entry) => entry.kind === "AVAILABLE" ? entry.value : undefined).filter((entry): entry is CanonEntry => Boolean(entry)),
+        overrideEntries.map((entry) => entry.kind === "AVAILABLE" ? entry.value : undefined).filter((entry): entry is CanonEntry => Boolean(entry)),
       ))
         throw new Error("The reviewed proposal mutation was inconsistent with authoritative state.");
       setP(confirmed);
@@ -1262,7 +1272,10 @@ export function SemanticSearch({ initialWorld }: { initialWorld?: number }) {
     if (world)
       void listBranches(world).then((r) => {
         setBranches(r);
-        if (r.kind === "AVAILABLE" && r.value.length) setBranch(r.value[0].id);
+        if (r.kind === "AVAILABLE") {
+          const firstEligible = r.value.find((candidate) => effectiveBranchActivity(candidate.id, r.value));
+          if (firstEligible) setBranch(firstEligible.id);
+        }
       });
   }, [world]);
   async function run(e: React.FormEvent) {
@@ -1302,11 +1315,12 @@ export function SemanticSearch({ initialWorld }: { initialWorld?: number }) {
               onChange={(e) => setBranch(Number(e.target.value))}
             >
               {branches?.kind === "AVAILABLE" &&
-                branches.value.map((b) => (
+                branches.value.filter((b) => effectiveBranchActivity(b.id, branches.value)).map((b) => (
                   <option value={b.id} key={b.id}>
                     {b.name}
                   </option>
                 ))}
+              {branches?.kind === "AVAILABLE" && !branches.value.some((b) => effectiveBranchActivity(b.id, branches.value)) && <option value="">No eligible active lineage</option>}
             </select>
           </div>
           <div className="field">

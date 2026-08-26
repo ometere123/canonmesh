@@ -11,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test:direct": "python -m pytest tests/direct -q",
     "test:frontend": "vitest run",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
     "preflight": "python scripts/preflight.py",
-    "verify": "npm run preflight && npm run test:direct && npm run test:frontend && npm run verify:deployment-source && npm run typecheck && npm run lint && npm run build",
+    "verify": "npm run preflight && npm run test:direct && npm run test:frontend && npm run verify:deployment-source && npm run audit:prod && npm run typecheck && npm run lint && npm run build",
     "verify:schema": "node scripts/verify-schema.mjs",
     "verify:studionet": "node scripts/exercise-studionet.mjs",
     "verify:deployment-source": "node scripts/verify-deployment-source.mjs"

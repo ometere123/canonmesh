@@ -8,10 +8,17 @@
 - **Architecture:** StudioNet Intelligent Contract + Vercel frontend only.
 - **Contract:** implemented with VecDB, bounded semantic retrieval, independent validator reasoning, stale-lineage protection, same-branch retcons and branch-local overrides.
 - **Frontend:** complete route surface implemented with direct live contract reads/writes, injected wallet, wrong-network gate, FINALIZED + GenVM execution verification and editorial story-bible UI.
-- **GitHub verification:** GREEN on implemented code — preflight PASS, 20 direct/source tests, TypeScript PASS, ESLint completed with warnings only, Next.js 16.3.2 production build PASS.
+- **GitHub verification:** GREEN on the current release line — preflight PASS, 59 Python Direct/source tests plus frontend unit tests, TypeScript PASS, ESLint 0/0, Next.js 16.3.3 production build PASS.
 - **StudioNet:** operational current release deployment is recorded below.
-- **Vercel:** owner-deployed; production URL and hosted-wallet proof are not available in this environment.
-- **Next exact action:** run the final deterministic gate and push the frontend confirmation/reproducibility hardening; do not redeploy the unchanged contract.
+- **Vercel:** owner-deployed at https://canonmesh.vercel.app; hosted-wallet proof remains owner-operated and is not claimed here.
+- **Next exact action:** run the final deterministic gate and push the wallet persistence, confirmation, security-header and documentation hardening; do not redeploy the unchanged contract.
+
+## 2026-08-26 — wallet and hosted-read hardening
+
+- Wallet hydration now performs only non-interactive `eth_accounts` on initial mount, restores an authorized account and chain without a popup, honors the non-sensitive `canonmesh.wallet.manualDisconnect` preference, and exposes an explicit Disconnect button. Provider account, chain and disconnect events remain handled.
+- Frontend confirmation remains state-delta based for world, branch, proposal and review writes; canonical input normalization mirrors contract storage for bounded strings, digests, modes and entity keys.
+- Added safe response headers (`nosniff`, strict referrer policy, restricted permissions, `X-Frame-Options: DENY`).
+- Independently opened https://canonmesh.vercel.app: page loaded and live reads rendered the deployed state (1 world, 2 branches, 1 canon entry, 1 proposal). No injected wallet was available in this browser, so hosted wallet write is NOT PROVEN / OWNER ACTION REQUIRED.
 
 ## 2026-08-26 — final frontend/reproducibility hardening
 

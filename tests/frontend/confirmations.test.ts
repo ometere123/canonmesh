@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { confirmBranchCreated, confirmReviewedProposal, confirmWorldCreated, findSubmittedProposal } from "../../lib/genlayer/confirmations";
 import type { Branch, CanonEntry, Proposal, World } from "../../lib/types";
+import { normalizeDigest, normalizeEntityKeys, normalizeProposalMode, normalizeWorldInput } from "../../lib/genlayer/normalization";
 
 const world = (id: number, name = "Vesper"): World => ({ id, steward: "0xabc", name, charter_text: "Charter", charter_url: "", charter_digest: "", version: 1, branch_count: 1, entry_count: 0, proposal_count: 0, created_at: "now" });
 const branch = (id: number, active = true): Branch => ({ id, world_id: 1, parent_branch_id: 0, name: "main", version: 1, entry_count: 0, proposal_count: 0, active, created_at: "now" });
@@ -26,5 +27,18 @@ describe("authoritative confirmation helpers", () => {
     expect(confirmReviewedProposal(proposal(1, "REVIEWED"), "ADD")).toBe(false);
     expect(confirmReviewedProposal({ ...proposal(1, "REVIEWED"), decision: "CONFLICT", resulting_entry_id: 0 }, "ADD")).toBe(true);
     expect(confirmReviewedProposal(proposal(1), "ADD", entry)).toBe(false);
+  });
+  it("mirrors contract normalization for forms", () => {
+    expect(normalizeWorldInput({ name: "  Vesper   Archive ", charter_text: " charter  text ", charter_url: " https://example.com ", charter_digest: "ABCDEF" })).toMatchObject({ name: "Vesper Archive", charter_text: "charter  text", charter_url: "https://example.com", charter_digest: "sha256:abcdef" });
+    expect(normalizeDigest(" SHA256:ABCDEF ")).toBe("sha256:abcdef");
+    expect(normalizeEntityKeys([" Mira ", "vesper", "mira"])).toBe('["mira","vesper"]');
+    expect(normalizeProposalMode(" retcon ")).toBe("RETCON");
+  });
+  it("requires exact branch override arrays and preserved ancestors", () => {
+    const branchProposal = { ...proposal(1, "REVIEWED"), mode: "BRANCH" as const, decision: "BRANCH_ONLY", branch_overrides_json: "[2,3]", resulting_entry_id: 4 };
+    const result = { ...entry, id: 4, overrides_json: "[2,3]" };
+    expect(confirmReviewedProposal(branchProposal, "BRANCH", result, [], [{ ...entry, id: 2 }, { ...entry, id: 3 }])).toBe(true);
+    expect(confirmReviewedProposal(branchProposal, "BRANCH", { ...result, overrides_json: "[2]" }, [], [{ ...entry, id: 2 }, { ...entry, id: 3 }])).toBe(false);
+    expect(confirmReviewedProposal(branchProposal, "BRANCH", result, [], [{ ...entry, id: 2, superseded_by: 9 }, { ...entry, id: 3 }])).toBe(false);
   });
 });

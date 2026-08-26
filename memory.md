@@ -12,11 +12,10 @@ It settles which bounded facts belong to which world/branch/version and which ea
 
 - Contract + full frontend implemented on `main`.
 - Architecture: StudioNet Intelligent Contract + Vercel frontend only.
-- GitHub verification gate is proven green on the implemented code: preflight PASS, **20 direct/source tests passed**, TypeScript PASS, ESLint completed with warnings only, Next.js `16.3.2` production build PASS.
+- Current release gate is proven green: preflight PASS, 59 Python Direct/source tests, frontend unit tests, TypeScript PASS, ESLint 0/0, and Next.js `16.3.3` production build PASS.
 - Production build generated all required CanonMesh routes.
-- StudioNet deployment: **not yet proven**.
-- Live Vercel frontend: **not yet proven**.
-- `DEPLOYMENT.json` remains `NOT_DEPLOYED` until real public proof exists.
+- StudioNet deployment: operational at `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`; code/schema/stats and source parity are proven.
+- Live Vercel frontend: owner-deployed at https://canonmesh.vercel.app; hosted wallet-write proof is owner-operated and not claimed here.
 
 ## Frozen engineering defaults
 
@@ -24,7 +23,7 @@ It settles which bounded facts belong to which world/branch/version and which ea
 - RPC `https://studio.genlayer.com/api`
 - explorer `https://explorer-studio.genlayer.com`
 - `genlayer-js@1.1.8`
-- Next.js `16.3.2`
+- Next.js `16.3.3`
 - React / React DOM `19.2.4`
 - TypeScript `^5`, target ES2022
 - Tailwind `^4`
@@ -32,6 +31,7 @@ It settles which bounded facts belong to which world/branch/version and which ea
 - VecDB `all-MiniLM-L6-v2`, 384 dimensions, Euclidean distance
 - similarity = retrieval only
 - FINALIZED + explicit GenVM execution success before UI success
+- Wallet hydration uses non-interactive `eth_accounts`; explicit disconnect is persisted as a local UI preference and writes remain injected-wallet-only.
 
 ## Product boundary
 
