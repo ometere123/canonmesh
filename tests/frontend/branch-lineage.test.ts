@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { effectiveBranchActivity, inactiveAncestorLabel } from "../../lib/branch-lineage";
-import { hydrateWalletState, MANUAL_DISCONNECT_KEY, nextWalletState } from "../../lib/wallet-session";
+import { applyProviderEvent, hydrateWalletState, MANUAL_DISCONNECT_KEY, nextWalletState } from "../../lib/wallet-session";
 import type { Branch } from "../../lib/types";
 
 const b = (id: number, parent_branch_id: number, active = true): Branch => ({ id, world_id: 1, parent_branch_id, name: String(id), version: 1, entry_count: 0, proposal_count: 0, active, created_at: "now" });
@@ -24,5 +24,13 @@ describe("effective branch eligibility", () => {
     expect(nextWalletState(connected, { type: "accounts-changed", accounts: [] })).toEqual({ mode: "none" });
     expect(nextWalletState(connected, { type: "chain-changed", chainId: "0x1" }).chainId).toBe(1);
     expect(nextWalletState(connected, { type: "provider-disconnected", message: "gone" })).toEqual({ mode: "none", error: "gone" });
+  });
+  it("does not reconnect from provider events while manually disconnected", () => {
+    const disconnected = { mode: "none" as const };
+    expect(applyProviderEvent(disconnected, { type: "accounts-changed", accounts: ["0xDef"] }, true)).toEqual(disconnected);
+    expect(applyProviderEvent(disconnected, { type: "chain-changed", chainId: "0xf22f" }, true)).toEqual(disconnected);
+    expect(applyProviderEvent(disconnected, { type: "provider-disconnected", message: "gone" }, true)).toEqual({ mode: "none", error: "gone" });
+    const reconnected = nextWalletState(disconnected, { type: "connected", address: "0xDef", chainId: 61999 });
+    expect(applyProviderEvent(reconnected, { type: "accounts-changed", accounts: ["0x123"] }, false).address).toBe("0x123");
   });
 });
