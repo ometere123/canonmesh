@@ -3,19 +3,21 @@
   "chain_id":61999,
   "rpc":"https://studio.genlayer.com/api",
   "explorer":"https://explorer-studio.genlayer.com",
-  "contract_address":"0xE386595d8Eb891e07597a6BAEad32c27E749FEc9",
-  "deployment_transaction":"0xe2eb9438f5b44c395a10fd2e4fe2ab690322f471cef39b648c0182223dce4831",
+  "contract_address":"0x86280023045b2801966f9561313DaeB82EdC3C74",
+  "deployment_transaction":"0x934a31d7aef2b071091505c91bb8b22407a973f7f1bf477d6140decd3e1bfd36",
   "deployer":"0xb29Ead15B1E8A2420faE84de974088f67a15ccC2",
-  "source_commit":"7a6eb49fae2cabd8f865ad2a4f232987c703e3a0",
-  "source_sha256":"fbc45de30aad01dd4fbf0cf5f9e8ee8bb47b923993824cc35c04a6ea9fa154f9",
-  "status":"RECEIPT_VERIFIED_REGISTRATION_NOT_PROVEN",
+  "source_commit":"50506030388dd3570b6474d7ce02219b28ffe85b",
+  "source_sha256":"d19575da9f1e5d1f090cde62eb852377887adb588b729ae013b07f959c2fd71a",
+  "status":"OPERATIONAL_SCHEMA_CODE_READ_VERIFIED",
   "cli_version":"0.39.2",
   "receipt_address_match":true,
-  "schema_status":"NOT_PROVEN — gen_getContractSchema returns Contract not found",
-  "live_read_status":"NOT_PROVEN — gen_call returns Contract not found",
+  "schema_status":"PASS — 23 required methods present",
+  "live_read_status":"PASS — stats() and list_world_ids() read successfully",
   "finality":"FINALIZED",
   "genvm_execution_result":"SUCCESS",
   "evm_receipt_status":"0x1",
+  "code_status":"PASS — CLI code lookup resolves exact receipt address",
+  "studio_rpc_receipt_status":"0x1",
   "additional_attempts":[
     {
       "deployment_transaction":"0x6f108e4b557d709de9d5d28d148c7f3b82d587296fad2b284969c482f21c8635",
@@ -24,5 +26,13 @@
       "registration_status":"NOT_FOUND"
     }
   ],
-  "note":"GenLayer receipt and independent EVM receipt prove transaction finality/execution for the first attempt, but StudioNet schema/call lookup cannot resolve the returned contract address. Do not use this address for release."
+  "lifecycle_proof":[
+    {"scenario":"create_world","tx":"0xbc1e7298d2506732246be06ab0f4f580be085f9f03a7bbf6020b17dee0b25c50","status":"FINALIZED","genvm":"SUCCESS","state":"world_count=1, root branch=1"},
+    {"scenario":"create_child_branch","tx":"0x2c309e82d31da739b73873d44d9d41209da529d8eff65a50e8c74b13e943df80","status":"FINALIZED","genvm":"SUCCESS","state":"branch_count=2, child branch=2"},
+    {"scenario":"submit_proposal","tx":"0xc2b553e5b759dd15fa6f2fc5986e4ea293c31f1808d3d3700ca50d89b872ab4b","status":"FINALIZED","genvm":"SUCCESS","state":"proposal_count=1, proposal=1"},
+    {"scenario":"review_compatible","tx":"0xd6867982769a30f2832ca93b03cd44a8172edd018d240d98041f520803a2598f","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1 COMPATIBLE, resulting_entry=1, entry_count=1"},
+    {"scenario":"semantic_retrieval","method":"search_canon","state":"PASS — entry 1 returned for bell dusk"},
+    {"scenario":"create_grandchild_branch","tx":"0x37489f8c24098be2d0481a6e7bebf9e9ae60ec3a73dfb030281caa06f7e06339","status":"FINALIZED","genvm":"SUCCESS","state":"branch_count=3, grandchild branch=3"}
+  ],
+  "note":"Fresh deployment is from the current hardened source commit. GenLayer receipt is FINALIZED with leader SUCCESS; independent StudioNet RPC receipt is 0x1; exact receipt address, code, schema, and stats() resolve. Previous older-source attempts remain historical only."
 }
