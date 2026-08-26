@@ -107,7 +107,7 @@ Current deterministic/source suite covers accepted-only semantic memory, stale l
 
 ## StudioNet deployment
 
-Current release proof (GitHub main `01a03dd841debdbb50cb81d591795865bfba5904`): the unchanged deployed contract is `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`, with source parity PASS and live schema/stats reads PASS. The release gate is 59 Python Direct/source tests plus 5 frontend unit tests, TypeScript PASS, ESLint 0/0, and production build PASS. The owner has deployed Vercel separately; its URL and hosted-wallet write are not exposed in this environment.
+Current release proof (GitHub main `27af44ec95341f6547b64cf64756d9babb722b58`): the unchanged deployed contract is `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`, with source parity PASS and live schema/stats reads PASS. The release gate is 59 Python Direct/source tests plus 5 frontend unit tests, TypeScript PASS, ESLint 0/0, and production build PASS. The owner has deployed Vercel separately; its URL and hosted-wallet write are not exposed in this environment.
 
 Current GenLayer CLI documentation uses:
 
