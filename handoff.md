@@ -20,6 +20,7 @@
 - Added `package-lock.json`, switched CI installation to `npm ci`, and included frontend tests plus deployment source parity in `npm run verify`.
 - Updated deployment manifest repository metadata to the current known main SHA. Contract source remains unchanged; existing final contract parity remains valid.
 - Hosted URL and hosted-wallet write remain NOT PROVEN here because the owner-managed Vercel URL/injected browser session is not exposed.
+- Final pushed commit: `01a03dd841debdbb50cb81d591795865bfba5904`; `origin/main` matches. The contract file is unchanged from deployed source `b5c339435e440c9a99a1993b061525f1d8b689fb`, so the current address remains release-valid. GitHub run `32989102520` is the last known successful baseline; a new run for this pushed commit is not yet observed in this environment.
 
 ## 2026-08-26 — Takeover attempt / environment blocker
 
