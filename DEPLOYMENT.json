@@ -1,0 +1,13 @@
+{
+  "network":"studionet",
+  "chain_id":61999,
+  "rpc":"https://studio.genlayer.com/api",
+  "explorer":"https://explorer-studio.genlayer.com",
+  "contract_address":null,
+  "deployment_transaction":null,
+  "deployer":null,
+  "source_commit":null,
+  "source_sha256":null,
+  "status":"NOT_DEPLOYED",
+  "note":"Populate only after a real StudioNet deployment and GenVM execution verification."
+}
