@@ -1,0 +1,3 @@
+import {createAccount,createClient} from "genlayer-js";
+import {studionet} from "genlayer-js/chains";
+const address=process.env.NEXT_PUBLIC_CANONMESH_CONTRACT;if(!address)throw new Error("NEXT_PUBLIC_CANONMESH_CONTRACT is required");const endpoint=process.env.NEXT_PUBLIC_GENLAYER_ENDPOINT??"https://studio.genlayer.com/api";const client=createClient({chain:studionet,endpoint,account:createAccount()});const stats=await client.readContract({address,functionName:"stats",args:[]});const worlds=await client.readContract({address,functionName:"list_world_ids",args:[0n,50n]});console.log(JSON.stringify({address,stats,worlds},null,2));
