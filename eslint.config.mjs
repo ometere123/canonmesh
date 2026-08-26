@@ -10,5 +10,5 @@ export default defineConfig([
       "react-hooks/set-state-in-effect": "warn",
     },
   },
-  globalIgnores([".next/**", "node_modules/**"]),
+  globalIgnores([".next/**", "node_modules/**", ".pytest_cache/**", "artifacts/**", ".node_modules-recovery/**"]),
 ]);

@@ -75,6 +75,7 @@ Editorial story bible with marginalia rail, manuscript rules and preserved histo
 - 2026-08-26: same-branch retcon and branch-local inherited-canon divergence are separate protocol mechanisms.
 - 2026-08-26: TypeScript target is ES2022 because the GenLayer browser client uses native BigInt literals.
 - 2026-08-26: `react-hooks/set-state-in-effect` is warning-level because the flagged refresh effects call asynchronous contract reads before state updates; the production gate still runs ESLint and fails on actual lint errors.
+- 2026-08-26: frontend write flows now require exact authoritative state-delta confirmation; Vitest covers confirmation and effective inactive-lineage helpers. CI installs from the committed npm lockfile with `npm ci`; local lint is 0 errors/0 warnings.
 
 ## Verified repository evidence
 

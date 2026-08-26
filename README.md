@@ -71,7 +71,7 @@ The visual system is an editorial story bible with manuscript rules and marginal
 ## Local setup
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 npm run dev
 ```
@@ -90,6 +90,8 @@ The frontend intentionally does not fall back to fake data if the address or net
 python -m pip install -r requirements-dev.txt
 npm run preflight
 npm run test:direct
+npm run test:frontend
+npm run verify:deployment-source
 npm run typecheck
 npm run lint
 npm run build
@@ -124,7 +126,7 @@ Deployment status for the current release commit:
 - Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e`.
 - The earlier unresolved deployments remain historical evidence only; they are not release proof for this hardened source.
 - Final-source live proof includes world creation, root/child branch, evidence-bound COMPATIBLE canon, semantic retrieval. The remaining branch/retcon/negative-path transactions are listed as `NOT PROVEN` unless independently recorded in `DEPLOYMENT.json`.
-- Remote Studio Mode and hosted Vercel deployment remain `NOT PROVEN` in this environment.
+- The owner has deployed the frontend to Vercel; the production URL and hosted-wallet proof are not available in this environment.
 
 The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh therefore retains the bounded global top-32 scan followed by world/lineage filtering. A relevant entry beyond those 32 global neighbors can be starved; this limitation is documented and no unsupported VecDB filtering is claimed.
 

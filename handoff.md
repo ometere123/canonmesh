@@ -10,8 +10,16 @@
 - **Frontend:** complete route surface implemented with direct live contract reads/writes, injected wallet, wrong-network gate, FINALIZED + GenVM execution verification and editorial story-bible UI.
 - **GitHub verification:** GREEN on implemented code — preflight PASS, 20 direct/source tests, TypeScript PASS, ESLint completed with warnings only, Next.js 16.3.2 production build PASS.
 - **StudioNet:** operational current release deployment is recorded below.
-- **Vercel:** not deployed; no Vercel CLI/authenticated deployment context is available.
-- **Next exact action:** from an environment with a supported authenticated GenLayer CLI account, freeze current `main`, deploy `contracts/canonmesh.py` to StudioNet, verify deployment execution/schema, then execute and record the real lifecycle proof before configuring Vercel.
+- **Vercel:** owner-deployed; production URL and hosted-wallet proof are not available in this environment.
+- **Next exact action:** run the final deterministic gate and push the frontend confirmation/reproducibility hardening; do not redeploy the unchanged contract.
+
+## 2026-08-26 — final frontend/reproducibility hardening
+
+- Added behavioral frontend unit coverage for exact world/branch/proposal ID deltas, reviewed outcome state, and effective inactive-ancestor lineage. Vitest result: 5 passed.
+- Integrated those confirmations into production world, branch, proposal, and review writes. Refresh, FINALIZED, or GenVM success alone no longer produces terminal UI success.
+- Added `package-lock.json`, switched CI installation to `npm ci`, and included frontend tests plus deployment source parity in `npm run verify`.
+- Updated deployment manifest repository metadata to the current known main SHA. Contract source remains unchanged; existing final contract parity remains valid.
+- Hosted URL and hosted-wallet write remain NOT PROVEN here because the owner-managed Vercel URL/injected browser session is not exposed.
 
 ## 2026-08-26 — Takeover attempt / environment blocker
 

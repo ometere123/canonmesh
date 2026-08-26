@@ -10,8 +10,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:direct": "python -m pytest tests/direct -q",
+    "test:frontend": "vitest run",
     "preflight": "python scripts/preflight.py",
-    "verify": "npm run preflight && npm run test:direct && npm run typecheck && npm run lint && npm run build",
+    "verify": "npm run preflight && npm run test:direct && npm run test:frontend && npm run verify:deployment-source && npm run typecheck && npm run lint && npm run build",
     "verify:schema": "node scripts/verify-schema.mjs",
     "verify:studionet": "node scripts/exercise-studionet.mjs",
     "verify:deployment-source": "node scripts/verify-deployment-source.mjs"
@@ -30,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

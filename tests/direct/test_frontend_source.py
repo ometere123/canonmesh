@@ -13,7 +13,7 @@ def test_direct_contract_datasource():
 def test_wallet_finality_guards():
  w=(ROOT/"components/wallet-provider.tsx").read_text();c=(ROOT/"lib/genlayer/contract.ts").read_text().replace(" ","");assert "eth_requestAccounts" in w and "wallet_switchEthereumChain" in w and "accountsChanged" in w and "chainChanged" in w and "disconnect" in w;assert "TransactionStatus.FINALIZED" in c and 'execution.executionResult!=="SUCCESS"' in c and "value:0n" in c
 def test_writes_confirm_authoritative_state_before_success():
- s=sources();assert 'stage:"confirming"' in s;assert "Authoritative contract state confirmed." in s;assert "Authoritative proposal state could not be confirmed." in s
+ s=sources();assert 'stage: "confirming"' in s;assert "Authoritative contract state confirmed." in s;assert "was not uniquely confirmed on-chain" in s;assert "mutation was inconsistent with authoritative state" in s
 
 def test_exact_state_confirmation_helpers_are_present():
  s=sources();assert "confirmWorldCreated" in s;assert "confirmBranchCreated" in s;assert "findSubmittedProposal" in s;assert "confirmReviewedProposal" in s
