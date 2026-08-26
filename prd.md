@@ -171,6 +171,7 @@ The eligible actor can trigger the project-specific review. Long-running consens
 ### FR-8 — Fail closed
 
 Unavailable evidence, malformed outputs, stale state or validator disagreement cannot silently become a positive decision. An inactive branch ancestor makes the selected lineage ineligible for new proposals, review, retrieval, and descendant creation until reactivated. Explicit semantic equivalence/cosmetic rewording does not silently append duplicate canon; it settles fail-closed without creating a new entry.
+Settlement-critical target arrays are atomic and strict: malformed, duplicate, coerced, out-of-context, cross-world, wrong-branch, wrong-lineage, or wrong-entity IDs invalidate the complete positive decision. A validated duplicate reference is persisted in the proposal receipt.
 
 ### FR-9 — Authoritative receipt
 

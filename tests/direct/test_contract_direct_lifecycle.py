@@ -18,7 +18,7 @@ def _new_contract(direct_vm, direct_deploy, direct_alice):
     return contract, world_id, 1
 
 
-def _submit(contract, world_id, branch_id, mode, title, statement, url="", digest=""):
+def _submit(contract, world_id, branch_id, mode, title, statement, url="", digest="", entity_keys=None):
     return contract.submit_proposal(
         world_id,
         branch_id,
@@ -27,7 +27,7 @@ def _submit(contract, world_id, branch_id, mode, title, statement, url="", diges
         statement,
         url,
         digest,
-        json.dumps(["vesper"], separators=(",", ":")),
+        json.dumps(entity_keys or ["vesper"], separators=(",", ":")),
         "year 1",
     )
 
@@ -194,6 +194,7 @@ def test_explicit_equivalent_canon_does_not_append_duplicate(
     assert _review_as(contract, direct_vm, duplicate, "COMPATIBLE", duplicate_of=1) == "INSUFFICIENT_CONTEXT"
     assert contract.stats()["entry_count"] == 1
     assert contract.get_proposal(duplicate)["resulting_entry_id"] == 0
+    assert contract.get_proposal(duplicate)["duplicate_of"] == 1
 
 
 def test_target_and_decision_validation_fail_closed(
@@ -218,6 +219,56 @@ def test_target_and_decision_validation_fail_closed(
     direct_vm.clear_mocks()
     assert _review_as(contract, direct_vm, malformed, "NOT_A_DECISION") == "INSUFFICIENT_CONTEXT"
     assert contract.stats()["entry_count"] == 1
+
+
+@pytest.mark.parametrize("targets", [[1, 999], [1, 1], [True], [1.5], ["1"], [-1], [0]])
+def test_malformed_retcon_target_sets_never_partially_settle(
+    direct_vm, direct_deploy, direct_alice, targets
+):
+    contract, world_id, root_id = _new_contract(direct_vm, direct_deploy, direct_alice)
+    initial = _submit(contract, world_id, root_id, "ADD", "Target", "A target fact.")
+    assert _review_as(contract, direct_vm, initial, "COMPATIBLE") == "COMPATIBLE"
+    proposal = _submit(contract, world_id, root_id, "RETCON", "Bad target set", "Must fail closed.")
+    direct_vm.clear_mocks()
+    assert _review_as(contract, direct_vm, proposal, "RETCON_VALID", supersedes=targets) == "INSUFFICIENT_CONTEXT"
+    assert contract.stats()["entry_count"] == 1
+
+
+def test_entity_keys_protect_retcon_targets(
+    direct_vm, direct_deploy, direct_alice
+):
+    contract, world_id, root_id = _new_contract(direct_vm, direct_deploy, direct_alice)
+    first = _submit(contract, world_id, root_id, "ADD", "Mira", "Mira at the gate.", entity_keys=["mira-a"])
+    assert _review_as(contract, direct_vm, first, "COMPATIBLE") == "COMPATIBLE"
+    wrong = _submit(contract, world_id, root_id, "RETCON", "Mira", "Wrong identity.", entity_keys=["mira-b"])
+    direct_vm.clear_mocks()
+    assert _review_as(contract, direct_vm, wrong, "RETCON_VALID", supersedes=[1]) == "INSUFFICIENT_CONTEXT"
+    right = _submit(contract, world_id, root_id, "RETCON", "Mira", "Correct identity.", entity_keys=["mira-a"])
+    direct_vm.clear_mocks()
+    assert _review_as(contract, direct_vm, right, "RETCON_VALID", supersedes=[1]) == "RETCON_VALID"
+
+
+@pytest.mark.parametrize("targets", [[1, 999], [1, 1], [False], [1.5], ["1"], [-1], [0]])
+def test_malformed_branch_target_sets_never_partially_settle(
+    direct_vm, direct_deploy, direct_alice, targets
+):
+    contract, world_id, root_id = _new_contract(direct_vm, direct_deploy, direct_alice)
+    initial = _submit(contract, world_id, root_id, "ADD", "Inherited", "An inherited fact.")
+    assert _review_as(contract, direct_vm, initial, "COMPATIBLE") == "COMPATIBLE"
+    child_id = contract.create_branch(world_id, "field-notes", root_id)
+    proposal = _submit(contract, world_id, child_id, "BRANCH", "Bad branch set", "Must fail closed.")
+    direct_vm.clear_mocks()
+    assert _review_as(contract, direct_vm, proposal, "BRANCH_ONLY", branch_overrides=targets) == "INSUFFICIENT_CONTEXT"
+    assert contract.stats()["entry_count"] == 1
+
+
+def test_invalid_duplicate_reference_fails_closed(
+    direct_vm, direct_deploy, direct_alice
+):
+    contract, world_id, root_id = _new_contract(direct_vm, direct_deploy, direct_alice)
+    proposal = _submit(contract, world_id, root_id, "ADD", "Invalid duplicate", "No invented reference.")
+    assert _review_as(contract, direct_vm, proposal, "COMPATIBLE", duplicate_of=999) == "INSUFFICIENT_CONTEXT"
+    assert contract.get_proposal(proposal)["duplicate_of"] == 0
 
 
 def test_second_lineage_check_blocks_mutation_after_consensus(

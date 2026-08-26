@@ -154,3 +154,5 @@ Not yet proven: StudioNet deployment, deployed schema/source parity, real consen
 - Review performs a second lineage freshness check immediately after consensus. Explicit `duplicate_of` equivalence settles `INSUFFICIENT_CONTEXT` without appending duplicate canon.
 - Direct Mode covers unavailable, mismatched, and valid HTTPS SHA-256-bound evidence. Frontend writes remain in `confirming` until authoritative state re-read succeeds.
 - The Direct Mode framework executes one mocked leader path and cannot simulate separate leader/validator responses; adversarial disagreement proof is `NOT PROVEN`.
+- The strict-target hardening rejects malformed/mixed/duplicate/coerced IDs as complete target-set failures and applies deterministic entity-key intersection checks. `duplicate_of` is now persisted and returned by `get_proposal`; frontend parsing is updated.
+- The bundled `gltest.exe` was invoked at `C:\Users\\USER\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Scripts\\gltest.exe --network studionet`. Its available fixtures remained Direct Mode; a temporary control contract passed in-memory, so remote Studio Mode deployment remains `NOT PROVEN`.

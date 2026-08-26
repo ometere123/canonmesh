@@ -143,6 +143,7 @@ class Proposal:
     submitted_at: str
     reviewed_at: str
     resulting_entry_id: u256
+    duplicate_of: u256
 
 class WorldCreated(gl.Event):
     def __init__(self, world_id: u256, steward: Address, /, **blob): ...
@@ -410,19 +411,23 @@ RELATED_ACTIVE_CANON: %s""" % (
                 duplicate_of = 0
             elif duplicate_of != 0:
                 decision = DEC_INSUFFICIENT
-            supersedes, branch_overrides = [], []
-            for item in raw.get("supersedes", []) if isinstance(raw.get("supersedes", []), list) else []:
-                try: value = int(item)
-                except Exception: continue
-                meta = related_by_id.get(value)
-                if meta and int(meta["branch_id"]) == snapshot["branch_id"] and value not in supersedes: supersedes.append(value)
-                if len(supersedes) >= MAX_RELATED: break
-            for item in raw.get("branch_overrides", []) if isinstance(raw.get("branch_overrides", []), list) else []:
-                try: value = int(item)
-                except Exception: continue
-                meta = related_by_id.get(value)
-                if meta and int(meta["branch_id"]) != snapshot["branch_id"] and value not in branch_overrides: branch_overrides.append(value)
-                if len(branch_overrides) >= MAX_RELATED: break
+            proposal_keys = set(json.loads(proposal.entity_keys_json))
+            def target_set(raw_targets, expected_branch_ids):
+                if not isinstance(raw_targets, list) or len(raw_targets) > MAX_RELATED: return [], False
+                values = []
+                for item in raw_targets:
+                    if type(item) is not int or item <= 0 or item in values: return [], False
+                    meta = related_by_id.get(item)
+                    if meta is None or int(meta["branch_id"]) not in expected_branch_ids: return [], False
+                    target_keys = set(json.loads(meta["entity_keys_json"]))
+                    if proposal_keys and target_keys and not proposal_keys.intersection(target_keys): return [], False
+                    values.append(item)
+                values.sort()
+                return values, True
+            supersedes, supersedes_valid = target_set(raw.get("supersedes", []), [snapshot["branch_id"]])
+            branch_overrides, branch_overrides_valid = target_set(raw.get("branch_overrides", []), [int(x) for x in self._lineage(proposal.branch_id)[1:]])
+            if not supersedes_valid or not branch_overrides_valid:
+                decision, supersedes, branch_overrides = DEC_INSUFFICIENT, [], []
             supersedes.sort(); branch_overrides.sort()
             if decision == DEC_RETCON and (snapshot["mode"] != MODE_RETCON or not supersedes): decision, supersedes = DEC_INSUFFICIENT, []
             if decision == DEC_BRANCH and (snapshot["mode"] != MODE_BRANCH or snapshot["parent_branch_id"] == 0 or not branch_overrides): decision, branch_overrides = DEC_INSUFFICIENT, []
@@ -512,7 +517,7 @@ RELATED_ACTIVE_CANON: %s""" % (
         proposal = Proposal(gl.message.sender_address, world_id, branch_id, clean_mode,
             self._bounded(title, "proposal title", MAX_TITLE, True), self._multiline_bounded(canon_statement, "canon statement", MAX_STATEMENT, True),
             clean_url, clean_digest, self._entity_keys(entity_keys_json), self._bounded(time_anchor, "time anchor", MAX_TIME_ANCHOR, False),
-            u8(PENDING), "", "[]", "[]", "[]", "", "", branch.version, self._lineage_snapshot(branch_id), self._now(), "", ZERO)
+            u8(PENDING), "", "[]", "[]", "[]", "", "", branch.version, self._lineage_snapshot(branch_id), self._now(), "", ZERO, ZERO)
         self.proposals[proposal_id] = proposal
         self.world_proposals.get_or_insert_default(world_id).append(proposal_id)
         self.branch_proposals.get_or_insert_default(branch_id).append(proposal_id)
@@ -587,6 +592,7 @@ RELATED_ACTIVE_CANON: %s""" % (
         proposal.related_ids_json = json.dumps(related_ids, separators=(",", ":"))
         proposal.supersedes_json = json.dumps(supersedes, separators=(",", ":"))
         proposal.branch_overrides_json = json.dumps(branch_overrides, separators=(",", ":"))
+        proposal.duplicate_of = u256(int(verdict.get("duplicate_of", 0)))
         proposal.rationale = self._bounded(str(verdict.get("rationale", "")), "rationale", MAX_REASONING, False)
         proposal.evidence_summary = self._bounded(str(verdict.get("evidence_summary", "")), "evidence summary", MAX_REASONING, False)
         proposal.reviewed_at = self._now()
@@ -647,6 +653,7 @@ RELATED_ACTIVE_CANON: %s""" % (
             "entity_keys_json": p.entity_keys_json, "time_anchor": p.time_anchor, "status": STATUS_NAMES.get(int(p.status), "UNKNOWN"),
             "status_code": int(p.status), "decision": p.decision, "related_ids_json": p.related_ids_json, "supersedes_json": p.supersedes_json,
             "branch_overrides_json": p.branch_overrides_json, "rationale": p.rationale, "evidence_summary": p.evidence_summary,
+            "duplicate_of": int(p.duplicate_of),
             "base_branch_version": int(p.base_branch_version), "lineage_snapshot_json": p.lineage_snapshot_json,
             "submitted_at": p.submitted_at, "reviewed_at": p.reviewed_at, "resulting_entry_id": int(p.resulting_entry_id)}
 

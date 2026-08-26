@@ -44,6 +44,7 @@ There is no project backend, application database, custom indexer, project API, 
 - proposal lineage versions are frozen at submission and rechecked before review
 - selected lineages with any inactive ancestor are ineligible for proposal submission, review, semantic retrieval, and descendant branch creation until reactivated
 - explicit duplicate/equivalent canon identification settles `INSUFFICIENT_CONTEXT` and creates no second entry
+- settlement target arrays are now strictly atomic, and non-empty entity-key intersections are required for retcon/branch target identity; validated `duplicate_of` is persisted in proposals
 - RETCON_VALID targets only active same-world same-branch canon, max 8
 - child branch cannot retcon/global-mutate parent canon
 - BRANCH_ONLY targets active inherited ancestor canon, max 8

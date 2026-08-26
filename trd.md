@@ -153,6 +153,7 @@ Required properties:
 - branch-local overrides are inherited only by descendants of the diverging branch;
 - inactive or superseded records are not eligible to authorize a fresh positive decision;
 - if any ancestor in a selected branch lineage is inactive, the lineage is ineligible for proposal submission, review, semantic retrieval, and descendant branch creation until reactivated;
+- settlement-critical target arrays are strict and atomic; booleans, floats, numeric strings, non-positive, duplicate, invalid, out-of-context, cross-world, wrong-branch/lineage, and wrong-entity IDs fail closed as a complete set;
 - historical records remain inspectable.
 
 ## 9. Public evidence
