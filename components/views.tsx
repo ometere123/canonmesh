@@ -9,6 +9,7 @@ import {
   getStats,
   getWorld,
   isEditor,
+  getBranch,
   listBranches,
   listEntityEntries,
   listWorldEntries,
@@ -45,7 +46,12 @@ import {
   confirmReviewedProposal,
   confirmWorldCreated,
   findSubmittedProposal,
+  confirmBranchStatus,
+  confirmCancelledProposal,
+  confirmStaleProposal,
+  confirmEditorState,
 } from "@/lib/genlayer/confirmations";
+import { proposalLineageIsStale } from "@/lib/branch-lineage";
 
 const keys = (raw: string): string[] => {
   try {
@@ -75,6 +81,8 @@ export function WorldDesk() {
   const [charter, setCharter] = useState("");
   const [url, setUrl] = useState("");
   const [digest, setDigest] = useState("");
+  const [editorAddress, setEditorAddress] = useState("");
+  const [editorEnabled, setEditorEnabled] = useState(true);
   const [tx, setTx] = useState<TxState>(IDLE_TX);
   const [error, setError] = useState<string>();
   const refresh = useCallback(async () => {
@@ -149,6 +157,21 @@ export function WorldDesk() {
       setError(m);
       setTx((x) => ({ stage: "error", hash: x.hash, message: m }));
     }
+  }
+  async function updateEditor(e: React.FormEvent) {
+    e.preventDefault();
+    if (!world || wallet.address?.toLowerCase() !== world.steward.toLowerCase()) return;
+    try {
+      if (!/^0x[0-9a-fA-F]{40}$/.test(editorAddress)) throw new Error("Enter a valid EVM address.");
+      const client = await wallet.getWriteClient();
+      const hash = await writeContract(client, "set_editor", [BigInt(world.id), editorAddress, editorEnabled]);
+      setTx({stage:"finalizing", hash, message:"Waiting for editor permission finality."});
+      await waitForFinalized(client, hash);
+      setTx({stage:"confirming", hash, message:"Execution succeeded; confirming editor state."});
+      const result = await isEditor(world.id, editorAddress);
+      if (result.kind !== "AVAILABLE" || !confirmEditorState(result.value, editorEnabled)) throw new Error("Finalized editor permission did not match the requested state.");
+      setTx({stage:"success", hash, message:"Editor permission confirmed in finalized contract state."});
+    } catch (e) { setTx({stage:"error", message:formatWriteError(e, tx.hash)}); }
   }
   if (!CONTRACT_ADDRESS)
     return (
@@ -312,6 +335,19 @@ export function WorldDesk() {
         )}
       </section>
       <aside className="desk-margin">
+        {world && <section className="margin-section">
+          <h3>World governance</h3>
+          <p className="field-help">Steward: <code>{world.steward}</code></p>
+          <form onSubmit={updateEditor}>
+            <label>Editor address</label>
+            <input value={editorAddress} onChange={(e) => setEditorAddress(e.target.value)} placeholder="0x…" />
+            <div className="form-actions">
+              <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase()} onClick={() => setEditorEnabled(true)}>Grant editor</button>
+              <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase()} onClick={() => setEditorEnabled(false)}>Revoke editor</button>
+            </div>
+            {wallet.address?.toLowerCase() !== world.steward.toLowerCase() && <small className="field-help">World steward only</small>}
+          </form>
+        </section>}
         <section className="margin-section">
           <h3>Contract register</h3>
           <ReadState result={stats}>
@@ -639,12 +675,14 @@ export function TimelineView({ worldId }: { worldId: number }) {
 
 export function BranchMap({ worldId }: { worldId: number }) {
   const wallet = useWallet();
+  const [world, setWorld] = useState<ReadResult<World>>();
   const [branches, setBranches] = useState<ReadResult<Branch[]>>();
   const [name, setName] = useState("");
   const [parent, setParent] = useState<number>();
   const [tx, setTx] = useState<TxState>(IDLE_TX);
   const refresh = useCallback(async () => {
-    const r = await listBranches(worldId);
+    const [w, r] = await Promise.all([getWorld(worldId), listBranches(worldId)]);
+    setWorld(w);
     setBranches(r);
     if (r.kind === "AVAILABLE" && !parent) {
       const firstEligible = r.value.find((candidate) => effectiveBranchActivity(candidate.id, r.value));
@@ -703,6 +741,22 @@ export function BranchMap({ worldId }: { worldId: number }) {
       });
     }
   }
+  async function toggleBranch(branch: Branch) {
+    if (!world || world.kind !== "AVAILABLE" || wallet.address?.toLowerCase() !== world.value.steward.toLowerCase() || branch.parent_branch_id === 0) return;
+    try {
+      const before = await getBranch(branch.id);
+      if (before.kind !== "AVAILABLE") throw new Error("Branch state is unavailable before write.");
+      const client = await wallet.getWriteClient();
+      const hash = await writeContract(client, "set_branch_active", [BigInt(branch.id), !branch.active]);
+      setTx({stage:"finalizing", hash, message:"Waiting for branch status finality."});
+      await waitForFinalized(client, hash);
+      setTx({stage:"confirming", hash, message:"Execution succeeded; confirming finalized branch state."});
+      const after = await getBranch(branch.id);
+      if (after.kind !== "AVAILABLE" || !confirmBranchStatus(before.value, after.value, !branch.active)) throw new Error("Finalized branch status did not match the requested state.");
+      await refresh();
+      setTx({stage:"success", hash, message:"Branch status confirmed in finalized contract state."});
+    } catch (e) { setTx({stage:"error", message:formatWriteError(e, tx.hash)}); }
+  }
   return (
     <div className="page-shell">
       <header className="page-heading" data-folio="04">
@@ -728,10 +782,14 @@ export function BranchMap({ worldId }: { worldId: number }) {
                     </small>
                   </div>
                   <StatusMark status={b.active ? "ACTIVE" : "INACTIVE"} />
-                  {!effectiveBranchActivity(b.id, items) && (
-                    <small className="field-help">{inactiveAncestorLabel(b.id, items)}</small>
-                  )}
-                </article>
+                   {!effectiveBranchActivity(b.id, items) && (
+                     <small className="field-help">{inactiveAncestorLabel(b.id, items)}</small>
+                   )}
+                   <button className="text-action" disabled={!wallet.canWrite || b.parent_branch_id === 0 || wallet.address?.toLowerCase() !== (world?.kind === "AVAILABLE" ? world.value.steward.toLowerCase() : "")} onClick={() => void toggleBranch(b)}>
+                     {b.parent_branch_id === 0 ? "Root cannot be deactivated" : b.active ? "Deactivate" : "Activate"}
+                   </button>
+                   {wallet.address?.toLowerCase() !== (world?.kind === "AVAILABLE" ? world.value.steward.toLowerCase() : "") && b.parent_branch_id !== 0 && <small className="field-help">World steward only</small>}
+                 </article>
               ))
             }
           </ReadState>
@@ -991,12 +1049,18 @@ export function ProposalComposer({ worldId }: { worldId: number }) {
 export function ProposalReview({ proposalId }: { proposalId: number }) {
   const wallet = useWallet();
   const [p, setP] = useState<ReadResult<Proposal>>();
+  const [world, setWorld] = useState<ReadResult<World>>();
+  const [branches, setBranches] = useState<ReadResult<Branch[]>>();
   const [related, setRelated] = useState<ReadResult<RelatedCanon[]>>();
   const [tx, setTx] = useState<TxState>(IDLE_TX);
   const refresh = useCallback(async () => {
     const x = await getProposal(proposalId);
     setP(x);
-    if (x.kind === "AVAILABLE") setRelated(await previewRelated(proposalId, 8));
+    if (x.kind === "AVAILABLE") {
+      setRelated(await previewRelated(proposalId, 8));
+      const [w, bs] = await Promise.all([getWorld(x.value.world_id), listBranches(x.value.world_id)]);
+      setWorld(w); setBranches(bs);
+    }
   }, [proposalId]);
   useEffect(() => {
     queueMicrotask(() => void refresh());
@@ -1056,6 +1120,28 @@ export function ProposalReview({ proposalId }: { proposalId: number }) {
       });
     }
   }
+  async function cancel() {
+    try {
+      const client = await wallet.getWriteClient();
+      const hash = await writeContract(client, "cancel_proposal", [BigInt(proposalId)]);
+      setTx({stage:"finalizing", hash, message:"Waiting for cancellation finality."}); await waitForFinalized(client, hash);
+      setTx({stage:"confirming", hash, message:"Execution succeeded; confirming cancelled proposal."});
+      const confirmed = await getProposal(proposalId);
+      if (confirmed.kind !== "AVAILABLE" || !confirmCancelledProposal(confirmed.value)) throw new Error("Cancelled proposal state was not confirmed in finalized contract state.");
+      setP(confirmed); setTx({stage:"success", hash, message:"Cancellation confirmed in finalized contract state."});
+    } catch (e) { setTx({stage:"error", message:formatWriteError(e, tx.hash)}); }
+  }
+  async function invalidateStale() {
+    try {
+      const client = await wallet.getWriteClient();
+      const hash = await writeContract(client, "invalidate_stale_proposal", [BigInt(proposalId)]);
+      setTx({stage:"finalizing", hash, message:"Waiting for stale invalidation finality."}); await waitForFinalized(client, hash);
+      setTx({stage:"confirming", hash, message:"Execution succeeded; confirming stale terminal state."});
+      const confirmed = await getProposal(proposalId);
+      if (confirmed.kind !== "AVAILABLE" || !confirmStaleProposal(confirmed.value)) throw new Error("Stale proposal state was not confirmed in finalized contract state.");
+      setP(confirmed); setTx({stage:"success", hash, message:"Stale invalidation confirmed in finalized contract state."});
+    } catch (e) { setTx({stage:"error", message:formatWriteError(e, tx.hash)}); }
+  }
   return (
     <div className="page-shell">
       <ReadState result={p}>
@@ -1080,13 +1166,18 @@ export function ProposalReview({ proposalId }: { proposalId: number }) {
                   value={proposal.artifact_digest}
                 />
                 {proposal.status === "SUBMITTED" ? (
-                  <button
-                    className="primary-action"
-                    disabled={!wallet.canWrite}
-                    onClick={review}
-                  >
-                    Run consensus review
-                  </button>
+                  <>
+                    {(() => {
+                      const stale = branches?.kind === "AVAILABLE" && proposalLineageIsStale(proposal, branches.value);
+                      const steward = world?.kind === "AVAILABLE" && wallet.address?.toLowerCase() === world.value.steward.toLowerCase();
+                      const proposer = wallet.address?.toLowerCase() === proposal.proposer.toLowerCase();
+                      return <>
+                        {stale ? <><p className="field-help">STALE LINEAGE · This proposal was submitted against an older branch snapshot.</p><button className="primary-action" disabled={!wallet.canWrite} onClick={invalidateStale}>Invalidate stale proposal</button></> : <button className="primary-action" disabled={!wallet.canWrite} onClick={review}>Run consensus review</button>}
+                        <button className="secondary-action" disabled={!wallet.canWrite || (!proposer && !steward)} onClick={cancel}>Cancel proposal</button>
+                        {!proposer && !steward && <small className="field-help">Cancellation requires proposer or world steward.</small>}
+                      </>;
+                    })()}
+                  </>
                 ) : (
                   <div className="decision-block">
                     <p className="eyebrow">Final decision</p>
@@ -1117,8 +1208,7 @@ export function ProposalReview({ proposalId }: { proposalId: number }) {
                             </strong>
                             <p>{r.statement}</p>
                             <div className="related-distance">
-                              branch {r.branch_id} · vector distance{" "}
-                              {r.distance}
+                              branch {r.branch_id} · {r.retrieval_source === "VECDB" ? `VecDB · distance ${r.distance}` : `${r.retrieval_source === "ENTITY_SCOPE" ? "Entity" : "Lineage"} fallback · deterministic`}
                             </div>
                           </article>
                         ))

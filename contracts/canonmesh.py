@@ -57,6 +57,8 @@ MAX_EVIDENCE_TEXT = 7000
 MAX_SOURCE_BYTES = 1_000_000
 MAX_RELATED = 8
 MAX_KNN_SCAN = 32
+MAX_SCOPED_FALLBACK_SCAN = 16
+MAX_ENTITY_FALLBACK_SCAN = 16
 MAX_PAGE = 50
 MAX_BRANCH_DEPTH = 8
 ONE = u256(1)
@@ -334,20 +336,66 @@ class CanonMesh(gl.Contract):
         return "fictional canon proposal; world=%s; branch=%s; mode=%s; title=%s; entities=%s; time=%s; statement=%s" % (
             int(proposal.world_id), branch.name, proposal.mode, proposal.title, proposal.entity_keys_json, proposal.time_anchor, proposal.statement)
 
+    def _related_item(self, proposal: Proposal, entry_id: int, distance: str, source: str, lineage: list) -> dict:
+        entry = self._entry(u256(entry_id))
+        if entry.world_id != proposal.world_id or int(entry.branch_id) not in lineage:
+            return {}
+        if int(entry.status) not in FINAL_ACCEPTED or entry.superseded_by != ZERO:
+            return {}
+        if self._shadowed_for_branch(proposal.branch_id, u256(entry_id)):
+            return {}
+        return {"entry_id": entry_id, "branch_id": int(entry.branch_id), "distance": distance,
+            "retrieval_source": source, "title": entry.title, "statement": entry.statement,
+            "entity_keys_json": entry.entity_keys_json, "time_anchor": entry.time_anchor,
+            "status": STATUS_NAMES.get(int(entry.status), "ACCEPTED")}
+
+    def _knn_hits(self, proposal: Proposal):
+        if len(self.vectors) == 0: return []
+        return self.vectors.knn(self._embed(self._proposal_embedding_text(proposal)), min(len(self.vectors), MAX_KNN_SCAN))
+
     def _related(self, proposal: Proposal, limit: int) -> list:
         requested = min(max(int(limit), 1), MAX_RELATED)
-        if len(self.vectors) == 0: return []
         lineage = [int(x) for x in self._lineage(proposal.branch_id)]
-        selected = []
-        for hit in self.vectors.knn(self._embed(self._proposal_embedding_text(proposal)), min(len(self.vectors), MAX_KNN_SCAN)):
-            pointer = hit.value
-            if pointer.world_id != proposal.world_id or int(pointer.branch_id) not in lineage: continue
-            entry = self._entry(pointer.entry_id)
-            if entry.superseded_by != ZERO or self._shadowed_for_branch(proposal.branch_id, pointer.entry_id): continue
-            selected.append({"entry_id": int(pointer.entry_id), "branch_id": int(pointer.branch_id), "distance": str(hit.distance),
-                "title": entry.title, "statement": entry.statement, "entity_keys_json": entry.entity_keys_json,
-                "time_anchor": entry.time_anchor, "status": STATUS_NAMES.get(int(entry.status), "ACCEPTED")})
+        selected, selected_ids = [], []
+
+        def add_candidate(entry_id: int, distance: str, source: str) -> None:
+            if len(selected) >= requested or entry_id in selected_ids: return
+            item = self._related_item(proposal, entry_id, distance, source, lineage)
+            if not item: return
+            selected_ids.append(entry_id); selected.append(item)
+
+        for hit in self._knn_hits(proposal):
+            add_candidate(int(hit.value.entry_id), str(hit.distance), "VECDB")
             if len(selected) >= requested: break
+
+        # Global KNN is semantic retrieval only. Supplement a starved context
+        # from bounded authoritative indexes so unrelated worlds cannot consume
+        # the entire review window.
+        if len(selected) < requested:
+            try: proposal_keys = json.loads(proposal.entity_keys_json)
+            except Exception: proposal_keys = []
+            if isinstance(proposal_keys, list):
+                for raw_key in proposal_keys:
+                    values = self.entity_entries.get(self._entity_index_key(proposal.world_id, str(raw_key)))
+                    if values is None: continue
+                    start = max(0, len(values) - MAX_ENTITY_FALLBACK_SCAN)
+                    for index in range(len(values) - 1, start - 1, -1):
+                        add_candidate(int(values[index]), "", "ENTITY_SCOPE")
+                        if len(selected) >= requested: break
+                    if len(selected) >= requested: break
+
+        if len(selected) < requested:
+            # _lineage is current-to-root. BRANCH prioritizes inherited canon;
+            # RETCON prioritizes current-branch canon; ADD uses both nearest-first.
+            branch_order = lineage[1:] if proposal.mode == MODE_BRANCH else lineage
+            for branch_id in branch_order:
+                values = self.branch_entries.get(u256(branch_id))
+                if values is None: continue
+                start = max(0, len(values) - MAX_SCOPED_FALLBACK_SCAN)
+                for index in range(len(values) - 1, start - 1, -1):
+                    add_candidate(int(values[index]), "", "LINEAGE_SCOPE")
+                    if len(selected) >= requested: break
+                if len(selected) >= requested: break
         return selected
 
     def _fetch_bound(self, url: str, expected_digest: str) -> dict:

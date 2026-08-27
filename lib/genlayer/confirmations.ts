@@ -29,3 +29,14 @@ export function confirmReviewedProposal(proposal: Proposal, expectedMode: Propos
   if (proposal.decision === "BRANCH_ONLY") { const proposalOverrides = parseIds(proposal.branch_overrides_json); const entryOverrides = parseIds(resultingEntry.overrides_json); return Boolean(proposalOverrides?.length && entryOverrides && JSON.stringify(proposalOverrides) === JSON.stringify(entryOverrides) && overrideEntries.length === proposalOverrides.length && overrideEntries.every((entry) => entry.superseded_by === 0)); }
   return proposal.supersedes_json === "[]" && proposal.branch_overrides_json === "[]";
 }
+
+export function confirmEditorState(actual: boolean, expected: boolean) { return actual === expected; }
+export function confirmBranchStatus(before: Branch, after: Branch, expected: boolean) {
+  return after.id === before.id && after.active === expected && (expected === before.active || after.version === before.version + 1);
+}
+export function confirmCancelledProposal(proposal: Proposal) {
+  return proposal.status === "CANCELLED" && proposal.decision === "CANCELLED" && proposal.resulting_entry_id === 0 && Boolean(proposal.reviewed_at);
+}
+export function confirmStaleProposal(proposal: Proposal) {
+  return proposal.status === "STALE" && proposal.decision === "STALE" && proposal.resulting_entry_id === 0 && Boolean(proposal.reviewed_at);
+}
