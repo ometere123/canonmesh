@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confirmBranchCreated, confirmReviewedProposal, confirmWorldCreated, findSubmittedProposal } from "../../lib/genlayer/confirmations";
+import { confirmBranchCreated, confirmBranchStatus, confirmCancelledProposal, confirmEditorState, confirmReviewedProposal, confirmStaleProposal, confirmWorldCreated, findSubmittedProposal } from "../../lib/genlayer/confirmations";
 import type { Branch, CanonEntry, Proposal, World } from "../../lib/types";
 import { normalizeDigest, normalizeEntityKeys, normalizeProposalMode, normalizeWorldInput } from "../../lib/genlayer/normalization";
 
@@ -40,5 +40,23 @@ describe("authoritative confirmation helpers", () => {
     expect(confirmReviewedProposal(branchProposal, "BRANCH", result, [], [{ ...entry, id: 2 }, { ...entry, id: 3 }])).toBe(true);
     expect(confirmReviewedProposal(branchProposal, "BRANCH", { ...result, overrides_json: "[2]" }, [], [{ ...entry, id: 2 }, { ...entry, id: 3 }])).toBe(false);
     expect(confirmReviewedProposal(branchProposal, "BRANCH", result, [], [{ ...entry, id: 2, superseded_by: 9 }, { ...entry, id: 3 }])).toBe(false);
+  });
+  it("confirms editor enable/revoke and rejects mismatches", () => {
+    expect(confirmEditorState(true, true)).toBe(true);
+    expect(confirmEditorState(false, false)).toBe(true);
+    expect(confirmEditorState(true, false)).toBe(false);
+  });
+  it("confirms branch status changes only with the expected version increment", () => {
+    const before = { ...branch(2), active: true, version: 4 };
+    expect(confirmBranchStatus(before, { ...before, active: false, version: 5 }, false)).toBe(true);
+    expect(confirmBranchStatus(before, { ...before, active: true, version: 4 }, true)).toBe(true);
+    expect(confirmBranchStatus(before, { ...before, active: false, version: 4 }, false)).toBe(false);
+    expect(confirmBranchStatus(before, { ...before, active: true, version: 5 }, false)).toBe(false);
+  });
+  it("requires exact cancelled and stale terminal proposal state", () => {
+    expect(confirmCancelledProposal({ ...proposal(1, "CANCELLED"), decision: "CANCELLED", resulting_entry_id: 0, reviewed_at: "later" })).toBe(true);
+    expect(confirmCancelledProposal({ ...proposal(1, "CANCELLED"), decision: "CANCELLED", resulting_entry_id: 1 })).toBe(false);
+    expect(confirmStaleProposal({ ...proposal(1, "STALE"), decision: "STALE", resulting_entry_id: 0, reviewed_at: "later" })).toBe(true);
+    expect(confirmStaleProposal({ ...proposal(1, "STALE"), decision: "STALE", resulting_entry_id: 0, reviewed_at: "" })).toBe(false);
   });
 });

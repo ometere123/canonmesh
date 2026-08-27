@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { effectiveBranchActivity, inactiveAncestorLabel } from "../../lib/branch-lineage";
+import { branchStatusWriteEligible, effectiveBranchActivity, inactiveAncestorLabel, proposalCancellationEligible, proposalLineageIsStale } from "../../lib/branch-lineage";
 import { applyProviderEvent, hydrateWalletState, MANUAL_DISCONNECT_KEY, nextWalletState } from "../../lib/wallet-session";
 import type { Branch } from "../../lib/types";
 
@@ -32,5 +32,22 @@ describe("effective branch eligibility", () => {
     expect(applyProviderEvent(disconnected, { type: "provider-disconnected", message: "gone" }, true)).toEqual({ mode: "none", error: "gone" });
     const reconnected = nextWalletState(disconnected, { type: "connected", address: "0xDef", chainId: 61999 });
     expect(applyProviderEvent(reconnected, { type: "accounts-changed", accounts: ["0x123"] }, false).address).toBe("0x123");
+  });
+  it("fails closed for malformed, missing, or changed proposal snapshots", () => {
+    const branches = [b(1, 0), b(2, 1)];
+    const base = { id: 1, proposer: "0xabc", world_id: 1, branch_id: 2, mode: "ADD" as const, title: "x", statement: "x", artifact_url: "", artifact_digest: "", entity_keys_json: "[]", time_anchor: "now", status: "SUBMITTED", status_code: 1, decision: "", related_ids_json: "[]", supersedes_json: "[]", branch_overrides_json: "[]", rationale: "", evidence_summary: "", base_branch_version: 1, lineage_snapshot_json: "[[2,1],[1,1]]", submitted_at: "now", reviewed_at: "", resulting_entry_id: 0, duplicate_of: 0 };
+    expect(proposalLineageIsStale(base, branches)).toBe(false);
+    expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: "[[2,2],[1,1]]" }, branches)).toBe(true);
+    expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: "[[3,1]]" }, branches)).toBe(true);
+    expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: "malformed" }, branches)).toBe(true);
+  });
+  it("enforces lifecycle eligibility before writes", () => {
+    expect(branchStatusWriteEligible(b(1, 0))).toBe(false);
+    expect(branchStatusWriteEligible(b(2, 1))).toBe(true);
+    const submitted = { id: 1, proposer: "0xabc", status: "SUBMITTED" } as Parameters<typeof proposalCancellationEligible>[0];
+    expect(proposalCancellationEligible(submitted, "0xabc", "0xdef")).toBe(true);
+    expect(proposalCancellationEligible(submitted, "0xdef", "0xdef")).toBe(true);
+    expect(proposalCancellationEligible(submitted, "0x999", "0xdef")).toBe(false);
+    expect(proposalCancellationEligible({ ...submitted, status: "CANCELLED" }, "0xabc", "0xdef")).toBe(false);
   });
 });

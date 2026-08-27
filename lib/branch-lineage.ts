@@ -36,3 +36,13 @@ export function proposalLineageIsStale(proposal: Proposal, branches: Branch[]): 
     return snapshot.some((row) => Array.isArray(row) && row.length === 2 && (!byId.has(Number(row[0])) || byId.get(Number(row[0]))!.version !== Number(row[1])));
   } catch { return true; }
 }
+
+export function branchStatusWriteEligible(branch: Branch): boolean {
+  return branch.parent_branch_id !== 0;
+}
+
+export function proposalCancellationEligible(proposal: Proposal, walletAddress: string | undefined, steward: string | undefined): boolean {
+  if (proposal.status !== "SUBMITTED" || !walletAddress) return false;
+  const address = walletAddress.toLowerCase();
+  return address === proposal.proposer.toLowerCase() || address === steward?.toLowerCase();
+}

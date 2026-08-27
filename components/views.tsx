@@ -39,7 +39,7 @@ import {
   StatusMark,
 } from "./ui";
 import { IDLE_TX, TransactionRail, type TxState } from "./transaction-rail";
-import { effectiveBranchActivity, inactiveAncestorLabel } from "@/lib/branch-lineage";
+import { branchStatusWriteEligible, effectiveBranchActivity, inactiveAncestorLabel, proposalCancellationEligible } from "@/lib/branch-lineage";
 import { formatWriteError } from "@/lib/error-format";
 import {
   confirmBranchCreated,
@@ -161,6 +161,10 @@ export function WorldDesk() {
   async function updateEditor(e: React.FormEvent) {
     e.preventDefault();
     if (!world || wallet.address?.toLowerCase() !== world.steward.toLowerCase()) return;
+    if (!editorEnabled && editorAddress.toLowerCase() === world.steward.toLowerCase()) {
+      setError("The world steward cannot revoke their own editor authority.");
+      return;
+    }
     try {
       if (!/^0x[0-9a-fA-F]{40}$/.test(editorAddress)) throw new Error("Enter a valid EVM address.");
       const client = await wallet.getWriteClient();
@@ -343,7 +347,8 @@ export function WorldDesk() {
             <input value={editorAddress} onChange={(e) => setEditorAddress(e.target.value)} placeholder="0x…" />
             <div className="form-actions">
               <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase()} onClick={() => setEditorEnabled(true)}>Grant editor</button>
-              <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase()} onClick={() => setEditorEnabled(false)}>Revoke editor</button>
+              <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase() || (!editorEnabled && editorAddress.toLowerCase() === world.steward.toLowerCase())} onClick={() => setEditorEnabled(false)}>Revoke editor</button>
+              {!editorEnabled && editorAddress.toLowerCase() === world.steward.toLowerCase() && <small className="field-help">The steward cannot revoke their own authority.</small>}
             </div>
             {wallet.address?.toLowerCase() !== world.steward.toLowerCase() && <small className="field-help">World steward only</small>}
           </form>
@@ -742,7 +747,7 @@ export function BranchMap({ worldId }: { worldId: number }) {
     }
   }
   async function toggleBranch(branch: Branch) {
-    if (!world || world.kind !== "AVAILABLE" || wallet.address?.toLowerCase() !== world.value.steward.toLowerCase() || branch.parent_branch_id === 0) return;
+    if (!world || world.kind !== "AVAILABLE" || wallet.address?.toLowerCase() !== world.value.steward.toLowerCase() || !branchStatusWriteEligible(branch)) return;
     try {
       const before = await getBranch(branch.id);
       if (before.kind !== "AVAILABLE") throw new Error("Branch state is unavailable before write.");
@@ -785,7 +790,7 @@ export function BranchMap({ worldId }: { worldId: number }) {
                    {!effectiveBranchActivity(b.id, items) && (
                      <small className="field-help">{inactiveAncestorLabel(b.id, items)}</small>
                    )}
-                   <button className="text-action" disabled={!wallet.canWrite || b.parent_branch_id === 0 || wallet.address?.toLowerCase() !== (world?.kind === "AVAILABLE" ? world.value.steward.toLowerCase() : "")} onClick={() => void toggleBranch(b)}>
+                   <button className="text-action" disabled={!wallet.canWrite || !branchStatusWriteEligible(b) || wallet.address?.toLowerCase() !== (world?.kind === "AVAILABLE" ? world.value.steward.toLowerCase() : "")} onClick={() => void toggleBranch(b)}>
                      {b.parent_branch_id === 0 ? "Root cannot be deactivated" : b.active ? "Deactivate" : "Activate"}
                    </button>
                    {wallet.address?.toLowerCase() !== (world?.kind === "AVAILABLE" ? world.value.steward.toLowerCase() : "") && b.parent_branch_id !== 0 && <small className="field-help">World steward only</small>}
@@ -1168,13 +1173,13 @@ export function ProposalReview({ proposalId }: { proposalId: number }) {
                 {proposal.status === "SUBMITTED" ? (
                   <>
                     {(() => {
-                      const stale = branches?.kind === "AVAILABLE" && proposalLineageIsStale(proposal, branches.value);
-                      const steward = world?.kind === "AVAILABLE" && wallet.address?.toLowerCase() === world.value.steward.toLowerCase();
-                      const proposer = wallet.address?.toLowerCase() === proposal.proposer.toLowerCase();
+                      const freshnessKnown = branches?.kind === "AVAILABLE";
+                      const stale = freshnessKnown && proposalLineageIsStale(proposal, branches.value);
+                      const proposer = proposalCancellationEligible(proposal, wallet.address, world?.kind === "AVAILABLE" ? world.value.steward : undefined);
                       return <>
-                        {stale ? <><p className="field-help">STALE LINEAGE · This proposal was submitted against an older branch snapshot.</p><button className="primary-action" disabled={!wallet.canWrite} onClick={invalidateStale}>Invalidate stale proposal</button></> : <button className="primary-action" disabled={!wallet.canWrite} onClick={review}>Run consensus review</button>}
-                        <button className="secondary-action" disabled={!wallet.canWrite || (!proposer && !steward)} onClick={cancel}>Cancel proposal</button>
-                        {!proposer && !steward && <small className="field-help">Cancellation requires proposer or world steward.</small>}
+                        {!freshnessKnown ? <><p className="field-help">Live branch state unavailable · proposal freshness cannot be established.</p><button className="primary-action" disabled>Run consensus review</button></> : stale ? <><p className="field-help">STALE LINEAGE · This proposal was submitted against an older branch snapshot.</p><button className="primary-action" disabled={!wallet.canWrite} onClick={invalidateStale}>Invalidate stale proposal</button></> : <button className="primary-action" disabled={!wallet.canWrite} onClick={review}>Run consensus review</button>}
+                        <button className="secondary-action" disabled={!wallet.canWrite || !proposer} onClick={cancel}>Cancel proposal</button>
+                        {!proposer && <small className="field-help">Cancellation requires proposer or world steward.</small>}
                       </>;
                     })()}
                   </>
