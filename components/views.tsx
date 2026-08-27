@@ -50,6 +50,7 @@ import {
   confirmCancelledProposal,
   confirmStaleProposal,
   confirmEditorState,
+  editorOperationAllowed,
 } from "@/lib/genlayer/confirmations";
 import { proposalLineageIsStale } from "@/lib/branch-lineage";
 
@@ -82,7 +83,6 @@ export function WorldDesk() {
   const [url, setUrl] = useState("");
   const [digest, setDigest] = useState("");
   const [editorAddress, setEditorAddress] = useState("");
-  const [editorEnabled, setEditorEnabled] = useState(true);
   const [tx, setTx] = useState<TxState>(IDLE_TX);
   const [error, setError] = useState<string>();
   const refresh = useCallback(async () => {
@@ -158,22 +158,20 @@ export function WorldDesk() {
       setTx((x) => ({ stage: "error", hash: x.hash, message: m }));
     }
   }
-  async function updateEditor(e: React.FormEvent) {
-    e.preventDefault();
-    if (!world || wallet.address?.toLowerCase() !== world.steward.toLowerCase()) return;
-    if (!editorEnabled && editorAddress.toLowerCase() === world.steward.toLowerCase()) {
-      setError("The world steward cannot revoke their own editor authority.");
+  async function updateEditor(enabled: boolean) {
+    if (!world || !editorOperationAllowed(enabled, editorAddress, world.steward, wallet.address)) {
+      if (world && !enabled && editorAddress.toLowerCase() === world.steward.toLowerCase()) setError("The world steward cannot revoke their own editor authority.");
       return;
     }
     try {
       if (!/^0x[0-9a-fA-F]{40}$/.test(editorAddress)) throw new Error("Enter a valid EVM address.");
       const client = await wallet.getWriteClient();
-      const hash = await writeContract(client, "set_editor", [BigInt(world.id), editorAddress, editorEnabled]);
+      const hash = await writeContract(client, "set_editor", [BigInt(world.id), editorAddress, enabled]);
       setTx({stage:"finalizing", hash, message:"Waiting for editor permission finality."});
       await waitForFinalized(client, hash);
       setTx({stage:"confirming", hash, message:"Execution succeeded; confirming editor state."});
       const result = await isEditor(world.id, editorAddress);
-      if (result.kind !== "AVAILABLE" || !confirmEditorState(result.value, editorEnabled)) throw new Error("Finalized editor permission did not match the requested state.");
+      if (result.kind !== "AVAILABLE" || !confirmEditorState(result.value, enabled)) throw new Error("Finalized editor permission did not match the requested state.");
       setTx({stage:"success", hash, message:"Editor permission confirmed in finalized contract state."});
     } catch (e) { setTx({stage:"error", message:formatWriteError(e, tx.hash)}); }
   }
@@ -342,13 +340,13 @@ export function WorldDesk() {
         {world && <section className="margin-section">
           <h3>World governance</h3>
           <p className="field-help">Steward: <code>{world.steward}</code></p>
-          <form onSubmit={updateEditor}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <label>Editor address</label>
             <input value={editorAddress} onChange={(e) => setEditorAddress(e.target.value)} placeholder="0x…" />
             <div className="form-actions">
-              <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase()} onClick={() => setEditorEnabled(true)}>Grant editor</button>
-              <button className="secondary-action" disabled={!wallet.canWrite || wallet.address?.toLowerCase() !== world.steward.toLowerCase() || (!editorEnabled && editorAddress.toLowerCase() === world.steward.toLowerCase())} onClick={() => setEditorEnabled(false)}>Revoke editor</button>
-              {!editorEnabled && editorAddress.toLowerCase() === world.steward.toLowerCase() && <small className="field-help">The steward cannot revoke their own authority.</small>}
+              <button type="button" className="secondary-action" disabled={!wallet.canWrite || !editorOperationAllowed(true, editorAddress, world.steward, wallet.address)} onClick={() => void updateEditor(true)}>Grant editor</button>
+              <button type="button" className="secondary-action" disabled={!wallet.canWrite || !editorOperationAllowed(false, editorAddress, world.steward, wallet.address)} onClick={() => void updateEditor(false)}>Revoke editor</button>
+              {editorAddress.toLowerCase() === world.steward.toLowerCase() && <small className="field-help">The steward cannot revoke their own authority.</small>}
             </div>
             {wallet.address?.toLowerCase() !== world.steward.toLowerCase() && <small className="field-help">World steward only</small>}
           </form>

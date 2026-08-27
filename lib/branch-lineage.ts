@@ -33,7 +33,14 @@ export function proposalLineageIsStale(proposal: Proposal, branches: Branch[]): 
     const snapshot = JSON.parse(proposal.lineage_snapshot_json) as unknown;
     if (!Array.isArray(snapshot)) return true;
     const byId = new Map(branches.map((branch) => [branch.id, branch]));
-    return snapshot.some((row) => Array.isArray(row) && row.length === 2 && (!byId.has(Number(row[0])) || byId.get(Number(row[0]))!.version !== Number(row[1])));
+    for (const row of snapshot) {
+      if (!Array.isArray(row) || row.length !== 2) return true;
+      const [branchId, version] = row;
+      if (typeof branchId !== "number" || !Number.isFinite(branchId) || !Number.isSafeInteger(branchId) || branchId <= 0) return true;
+      if (typeof version !== "number" || !Number.isFinite(version) || !Number.isSafeInteger(version) || version < 0) return true;
+      if (!byId.has(branchId) || byId.get(branchId)!.version !== version) return true;
+    }
+    return false;
   } catch { return true; }
 }
 

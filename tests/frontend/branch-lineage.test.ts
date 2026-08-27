@@ -40,6 +40,9 @@ describe("effective branch eligibility", () => {
     expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: "[[2,2],[1,1]]" }, branches)).toBe(true);
     expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: "[[3,1]]" }, branches)).toBe(true);
     expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: "malformed" }, branches)).toBe(true);
+    for (const snapshot of ['[["bad"],[2,1]]', "[[2]]", "[[2,1,9]]", '[["2","1"]]', "[[0,1]]"]) {
+      expect(proposalLineageIsStale({ ...base, lineage_snapshot_json: snapshot }, branches)).toBe(true);
+    }
   });
   it("enforces lifecycle eligibility before writes", () => {
     expect(branchStatusWriteEligible(b(1, 0))).toBe(false);

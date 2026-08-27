@@ -31,6 +31,9 @@ export function confirmReviewedProposal(proposal: Proposal, expectedMode: Propos
 }
 
 export function confirmEditorState(actual: boolean, expected: boolean) { return actual === expected; }
+export function editorOperationAllowed(enabled: boolean, editorAddress: string, steward: string, walletAddress?: string) {
+  return walletAddress?.toLowerCase() === steward.toLowerCase() && !(enabled === false && editorAddress.toLowerCase() === steward.toLowerCase());
+}
 export function confirmBranchStatus(before: Branch, after: Branch, expected: boolean) {
   return after.id === before.id && after.active === expected && (expected === before.active || after.version === before.version + 1);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confirmBranchCreated, confirmBranchStatus, confirmCancelledProposal, confirmEditorState, confirmReviewedProposal, confirmStaleProposal, confirmWorldCreated, findSubmittedProposal } from "../../lib/genlayer/confirmations";
+import { confirmBranchCreated, confirmBranchStatus, confirmCancelledProposal, confirmEditorState, confirmReviewedProposal, confirmStaleProposal, confirmWorldCreated, editorOperationAllowed, findSubmittedProposal } from "../../lib/genlayer/confirmations";
 import type { Branch, CanonEntry, Proposal, World } from "../../lib/types";
 import { normalizeDigest, normalizeEntityKeys, normalizeProposalMode, normalizeWorldInput } from "../../lib/genlayer/normalization";
 
@@ -45,6 +45,10 @@ describe("authoritative confirmation helpers", () => {
     expect(confirmEditorState(true, true)).toBe(true);
     expect(confirmEditorState(false, false)).toBe(true);
     expect(confirmEditorState(true, false)).toBe(false);
+    expect(editorOperationAllowed(true, "0xeditor", "0xsteward", "0xsteward")).toBe(true);
+    expect(editorOperationAllowed(false, "0xsteward", "0xsteward", "0xsteward")).toBe(false);
+    expect(editorOperationAllowed(false, "0xeditor", "0xsteward", "0xsteward")).toBe(true);
+    expect(editorOperationAllowed(true, "0xeditor", "0xsteward", "0xother")).toBe(false);
   });
   it("confirms branch status changes only with the expected version increment", () => {
     const before = { ...branch(2), active: true, version: 4 };
