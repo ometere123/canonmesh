@@ -527,7 +527,7 @@ RELATED_ACTIVE_CANON: %s""" % (
     def set_editor(self, world_id: u256, editor_address: str, enabled: bool) -> None:
         world = self._world(world_id)
         if gl.message.sender_address != world.steward: raise gl.vm.UserError("EXPECTED: world steward only")
-        editor = Address(editor_address)
+        editor = editor_address if isinstance(editor_address, Address) else Address(editor_address)
         if editor == world.steward and not enabled: raise gl.vm.UserError("EXPECTED: steward cannot disable self")
         self.editor_flags[self._editor_key(world_id, editor)] = bool(enabled)
         EditorSet(world_id, editor, enabled=str(bool(enabled)).lower()).emit()
