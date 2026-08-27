@@ -14,7 +14,7 @@
   "current_contract_sha256":"ec9b2f11be946757a516df90766ad25fff4d65856492960a1767f5fc4722aad8",
   "contract_source_matches_deployment":true,
   "frontend_url":"https://canonmesh.vercel.app",
-  "hosted_write_tx":null,
+  "hosted_write_tx":"0x4eca0fc1cb7b19847cea1e4b5249f9b31c305457c43cf0959f3450ee127b93ab",
   "verified_at":"2026-08-26",
   "status":"OPERATIONAL_SCHEMA_CODE_READ_VERIFIED",
   "cli_version":"0.39.2",
@@ -52,5 +52,13 @@
     {"scenario":"submit_initial_canon","tx":"0x235e05096ec18f765da5c4bd05fb1ea3fe4021f2d2ec7d162b66a434d0ced334","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1, entity_keys=[]; authoritative submission"},
     {"scenario":"review_initial_canon","tx":"0x5ab893d835b64e0878ed24e194a61bbba51250e1a6c6353e91526f4b877aa8de","status":"FINALIZED","genvm":"SUCCESS","state":"proposal=1 COMPATIBLE, resulting_entry=1"}
   ],
-  "note":"Fresh deployment is from the current hardened source commit. GenLayer receipt is FINALIZED with leader SUCCESS; independent StudioNet RPC receipt is 0x1; exact receipt address, code, schema, and stats() resolve. Previous older-source attempts remain historical only."
+  "hosted_write_result":"The Ember Archive",
+  "hosted_write_finality":"FINALIZED",
+  "hosted_write_genvm":"SUCCESS",
+  "hosted_write_contract":"0xCb4E8279Eff17c734c3eA2e32657691610b3467A",
+  "hosted_finalized_reread":"PASS — LATEST_FINAL list_world_ids=[1,2], get_world(2)=The Ember Archive, stats world_count=2",
+  "wallet_refresh_persistence":"PROVEN",
+  "wallet_manual_disconnect_persistence":"PROVEN",
+  "snap_dependency":"NONE",
+  "note":"Fresh deployment is from the current hardened source commit. GenLayer receipt is FINALIZED with leader SUCCESS; independent StudioNet RPC receipt is 0x1; exact receipt address, code, schema, and stats() resolve. Hosted production write and LATEST_FINAL reread are now independently verified. Previous older-source attempts remain historical only."
 }

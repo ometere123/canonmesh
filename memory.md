@@ -88,13 +88,11 @@ GitHub Actions run `32916066098` on commit `307a29c7d4a63e903e625e19012a337349de
 - Next production build: PASS
 - built routes: `/`, `/proposals/[proposalId]`, `/receipts/[proposalId]`, `/search`, `/worlds/[worldId]/branches`, `/worlds/[worldId]/canon`, `/worlds/[worldId]/entities/[entityKey]`, `/worlds/[worldId]/proposals/new`, `/worlds/[worldId]/timeline`
 
-## Remaining facts to prove
+## Remaining optional assurance
 
-- StudioNet contract address / deploy transaction / deployer / source parity
-- real deterministic and consensus lifecycle transaction hashes + actual GenVM results
-- fail-closed/insufficient live path where practical
-- Vercel production URL
-- at least one hosted injected-wallet write against the deployed contract
+- additional final-contract negative-path lifecycle transactions where practical (stale, inactive ancestor, evidence failure, duplicate and conflict outcomes remain nondeterministic/optional)
+- broader final-contract BRANCH_ONLY and RETCON proof beyond the already recorded lifecycle evidence
+- no hosted-wallet limitation remains for the recorded production write; the owner-provided hosted proof is recorded below
 
 ## 2026-08-26 — Takeover environment checkpoint
 

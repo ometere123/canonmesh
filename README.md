@@ -107,7 +107,7 @@ Current deterministic/source suite covers accepted-only semantic memory, stale l
 
 ## StudioNet deployment
 
-Current release proof: the unchanged deployed contract is `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`, with source parity PASS and live schema/stats reads PASS. The release gate includes 59 Python Direct/source tests and 10 frontend unit tests, TypeScript PASS, ESLint 0/0, and production build PASS. The owner-deployed frontend is [canonmesh.vercel.app](https://canonmesh.vercel.app); public live reads were verified in-browser, while hosted wallet-write proof remains owner-operated and is not claimed here.
+Current release proof: the unchanged deployed contract is `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`, with source parity PASS and live schema/stats reads PASS. The release gate includes 59 Python Direct/source tests and 18 frontend unit tests, TypeScript PASS, ESLint 0/0, and production build PASS. The production frontend is [canonmesh.vercel.app](https://canonmesh.vercel.app). Hosted injected-wallet write is PROVEN by transaction `0x4eca0fc1cb7b19847cea1e4b5249f9b31c305457c43cf0959f3450ee127b93ab`; it created The Ember Archive, reached FINALIZED with GenVM SUCCESS, and its state persists through an authoritative LATEST_FINAL reread.
 
 Current GenLayer CLI documentation uses:
 
@@ -128,7 +128,7 @@ Deployment status for the current release commit:
 - Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e`.
 - The earlier unresolved deployments remain historical evidence only; they are not release proof for this hardened source.
 - Final-source live proof includes world creation, root/child branch, evidence-bound COMPATIBLE canon, semantic retrieval. The remaining branch/retcon/negative-path transactions are listed as `NOT PROVEN` unless independently recorded in `DEPLOYMENT.json`.
-- The owner has deployed the frontend to Vercel; the production URL and hosted-wallet proof are not available in this environment.
+- Wallet refresh persistence and explicit/manual disconnect persistence are PROVEN. The production wallet path has no MetaMask Snap dependency.
 
 The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh therefore retains the bounded global top-32 scan followed by world/lineage filtering. A relevant entry beyond those 32 global neighbors can be starved; this limitation is documented and no unsupported VecDB filtering is claimed.
 

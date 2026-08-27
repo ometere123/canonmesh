@@ -10,8 +10,14 @@
 - **Frontend:** complete route surface implemented with direct live contract reads/writes, injected wallet, wrong-network gate, FINALIZED + GenVM execution verification and editorial story-bible UI.
 - **GitHub verification:** GREEN on the current release line — preflight PASS, 59 Python Direct/source tests plus frontend unit tests, TypeScript PASS, ESLint 0/0, Next.js 16.3.3 production build PASS.
 - **StudioNet:** operational current release deployment is recorded below.
-- **Vercel:** owner-deployed at https://canonmesh.vercel.app; hosted-wallet proof remains owner-operated and is not claimed here.
+- **Vercel:** production at https://canonmesh.vercel.app; hosted injected-wallet write and finalized reread are proven in the current release evidence.
 - **Next exact action:** run the final deterministic gate and push the wallet persistence, confirmation, security-header and documentation hardening; do not redeploy the unchanged contract.
+
+## 2026-08-27 — hosted production evidence closure
+
+- Independently verified hosted write `0x4eca0fc1cb7b19847cea1e4b5249f9b31c305457c43cf0959f3450ee127b93ab`: `to_address` is the current contract `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`, status is `FINALIZED`, leader execution is `SUCCESS`, and receipt stdout/stderr are empty.
+- With `genlayer-js` using `TransactionHashVariant.LATEST_FINAL`, `list_world_ids` returned `[1, 2]`, `get_world(2)` returned name `The Ember Archive` with its recorded charter, and `stats` returned `world_count=2`, `branch_count=3`, `entry_count=1`, `proposal_count=1`.
+- Hosted proof now establishes production URL, injected-wallet write, finalized canonical reread, wallet refresh persistence, explicit/manual disconnect persistence, and no Snap dependency. No contract change or redeployment was made.
 
 ## 2026-08-26 — wallet and hosted-read hardening
 
