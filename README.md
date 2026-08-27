@@ -65,7 +65,7 @@ The visual system is an editorial story bible with manuscript rules and marginal
 - Browser SDK: `genlayer-js@1.1.8`
 - Embedding model: `all-MiniLM-L6-v2`, 384 dimensions
 - Writes: explicit injected wallet only
-- Read account: ephemeral in-memory SDK account where required
+- Read account: no wallet/account dependency in the public browser read client
 - Success rule: wait for `FINALIZED`, re-read transaction, and require GenVM leader `execution_result === "SUCCESS"`
 
 ## Local setup
@@ -107,7 +107,11 @@ Current deterministic/source suite covers accepted-only semantic memory, stale l
 
 ## StudioNet deployment
 
-Current release proof: the unchanged deployed contract is `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`, with source parity PASS and live schema/stats reads PASS. The release gate includes 59 Python Direct/source tests and 18 frontend unit tests, TypeScript PASS, ESLint 0/0, and production build PASS. The production frontend is [canonmesh.vercel.app](https://canonmesh.vercel.app). Hosted injected-wallet write is PROVEN by transaction `0x4eca0fc1cb7b19847cea1e4b5249f9b31c305457c43cf0959f3450ee127b93ab`; it created The Ember Archive, reached FINALIZED with GenVM SUCCESS, and its state persists through an authoritative LATEST_FINAL reread.
+Current acceptance deployment: contract `0x91eE572dB3981b60A72Ec29802af35eF86EFf22A`, source commit `d3548daa7003f2cc18d808dbf56ce0f9c2b63871`, deployment tx `0xc9e14e5141dfa2fc9db8feb4d2629787f22cb4babb75e3a8eebcfe00c0ee08b5`. It is FINALIZED with leader GenVM SUCCESS, EVM receipt `0x1`, and code/schema/stats verification. Normalized contract SHA-256: `d0ef35996494275ad870ada3183daf2dafac2c3623735b2396dadb98a1e936a6`.
+
+Team-review acceptance hardening adds bounded deterministic entity- and lineage-scoped fallback candidates after global VecDB KNN filtering. `MAX_SCOPED_FALLBACK_SCAN=16` and `MAX_ENTITY_FALLBACK_SCAN=16`; candidates remain world/lineage/status/supersession/shadow checked, deduplicated, capped by `MAX_RELATED`, and settlement-capable. Related results expose `VECDB`, `ENTITY_SCOPE`, or `LINEAGE_SCOPE`; distance is retrieval metadata, never confidence. The adversarial starvation Direct Mode test proves unrelated global neighbors cannot reduce eligible scoped canon to zero.
+
+The submitted frontend exposes steward-only editor grants/revokes, branch activation, proposal cancellation, and stale-proposal invalidation. Each uses FINALIZED + GenVM SUCCESS + exact LATEST_FINAL state confirmation. Vercel remains [canonmesh.vercel.app](https://canonmesh.vercel.app), but the owner must update it to the new contract address before it represents this acceptance deployment.
 
 Current GenLayer CLI documentation uses:
 
@@ -122,15 +126,15 @@ Or run `scripts/deploy-studionet.sh` after configuring a supported GenLayer CLI 
 
 Deployment status for the current release commit:
 
-- Current source commit `b5c339435e440c9a99a1993b061525f1d8b689fb` is deployed at `0xCb4E8279Eff17c734c3eA2e32657691610b3467A` ([explorer](https://explorer-studio.genlayer.com/address/0xCb4E8279Eff17c734c3eA2e32657691610b3467A)).
-- Deployment transaction: `0x54856986a9b0bfd1f591e5027c9c36b2960e30edb10178fb97c4f80fe7c16f63`; deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
+- Current source commit `d3548daa7003f2cc18d808dbf56ce0f9c2b63871` is deployed at `0x91eE572dB3981b60A72Ec29802af35eF86EFf22A` ([explorer](https://explorer-studio.genlayer.com/address/0x91eE572dB3981b60A72Ec29802af35eF86EFf22A)).
+- Deployment transaction: `0xc9e14e5141dfa2fc9db8feb4d2629787f22cb4babb75e3a8eebcfe00c0ee08b5`; deployer: `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`.
 - The receipt address matches the CLI address. It reached `FINALIZED`, leader GenVM execution was `SUCCESS`, and the independent StudioNet EVM receipt status was `0x1`.
-- Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `8a6e4aa3a4fafab477618043637736d39e80988eb508a12f1736521f9d41528e`.
+- Address-based code, schema and `stats()` reads resolve successfully. Contract source SHA-256 is `d0ef35996494275ad870ada3183daf2dafac2c3623735b2396dadb98a1e936a6` after line-ending normalization.
 - The earlier unresolved deployments remain historical evidence only; they are not release proof for this hardened source.
-- Final-source live proof includes world creation, root/child branch, evidence-bound COMPATIBLE canon, semantic retrieval. The remaining branch/retcon/negative-path transactions are listed as `NOT PROVEN` unless independently recorded in `DEPLOYMENT.json`.
+- Final-source live proof for this acceptance deployment includes deployment, address/code/schema/stats resolution, and governance transaction execution; detailed transaction evidence is retained in the handoff log. Vercel still requires owner configuration to point at this new address.
 - Wallet refresh persistence and explicit/manual disconnect persistence are PROVEN. The production wallet path has no MetaMask Snap dependency.
 
-The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh therefore retains the bounded global top-32 scan followed by world/lineage filtering. A relevant entry beyond those 32 global neighbors can be starved; this limitation is documented and no unsupported VecDB filtering is claimed.
+The current contract-owned VecDB API exposes global `knn(vector, k)` without metadata filtering or namespaces. CanonMesh retains the bounded global top-32 semantic pass, then supplements it from bounded deterministic entity and lineage indexes. This prevents unrelated global neighbors from wholly starving eligible scoped canon, while preserving the limitation that fallback is bounded rather than exhaustive.
 
 For the current operational deployment:
 

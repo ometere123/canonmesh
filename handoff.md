@@ -4,14 +4,21 @@
 
 ## Current checkpoint
 
-- **Phase:** Release proof / deployment.
+- **Phase:** Team-review acceptance deployment and evidence.
 - **Architecture:** StudioNet Intelligent Contract + Vercel frontend only.
 - **Contract:** implemented with VecDB, bounded semantic retrieval, independent validator reasoning, stale-lineage protection, same-branch retcons and branch-local overrides.
 - **Frontend:** complete route surface implemented with direct live contract reads/writes, injected wallet, wrong-network gate, FINALIZED + GenVM execution verification and editorial story-bible UI.
 - **GitHub verification:** GREEN on the current release line — preflight PASS, 59 Python Direct/source tests plus frontend unit tests, TypeScript PASS, ESLint 0/0, Next.js 16.3.3 production build PASS.
-- **StudioNet:** operational current release deployment is recorded below.
+- **StudioNet:** fresh acceptance deployment is operational and recorded below.
 - **Vercel:** production at https://canonmesh.vercel.app; hosted injected-wallet write and finalized reread are proven in the current release evidence.
-- **Next exact action:** run the final deterministic gate and push the wallet persistence, confirmation, security-header and documentation hardening; do not redeploy the unchanged contract.
+- **Next exact action:** run the final deterministic gate, push evidence, and request owner update of Vercel's contract environment to the fresh acceptance address.
+
+## 2026-08-27 — team-review acceptance hardening
+
+- Fresh acceptance deployment: source commit `d3548daa7003f2cc18d808dbf56ce0f9c2b63871`, normalized source SHA-256 `d0ef35996494275ad870ada3183daf2dafac2c3623735b2396dadb98a1e936a6`, contract `0x91eE572dB3981b60A72Ec29802af35eF86EFf22A`, deployment tx `0xc9e14e5141dfa2fc9db8feb4d2629787f22cb4babb75e3a8eebcfe00c0ee08b5`, deployer `0xb29Ead15B1E8A2420faE84de974088f67a15ccC2`. Receipt is FINALIZED, leader GenVM SUCCESS, and the independent EVM receipt is `0x1`.
+- `_related()` now performs global top-32 KNN retrieval followed by bounded entity-index and lineage-index fallback (`MAX_ENTITY_FALLBACK_SCAN=16`, `MAX_SCOPED_FALLBACK_SCAN=16`). Fallback candidates are fully revalidated, deduplicated, capped, and frozen into settlement context. Direct Mode starvation coverage proves an eligible World A entry remains settlement-capable when global KNN contains only unrelated World B neighbors.
+- The submitted frontend now visibly exposes `set_editor`, `set_branch_active`, `cancel_proposal`, and `invalidate_stale_proposal`, with steward/submitter/stale eligibility and exact FINALIZED + GenVM SUCCESS + LATEST_FINAL confirmation.
+- The old `0xCb4E...` deployment remains historical. Vercel is still at `https://canonmesh.vercel.app`, but owner action is required to set `NEXT_PUBLIC_CANONMESH_CONTRACT=0x91eE572dB3981b60A72Ec29802af35eF86EFf22A` and redeploy; hosted proof against the new address is therefore NOT PROVEN here.
 
 ## 2026-08-27 — hosted production evidence closure
 

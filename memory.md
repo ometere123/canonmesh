@@ -14,8 +14,8 @@ It settles which bounded facts belong to which world/branch/version and which ea
 - Architecture: StudioNet Intelligent Contract + Vercel frontend only.
 - Current release gate is proven green: preflight PASS, 59 Python Direct/source tests, frontend unit tests, TypeScript PASS, ESLint 0/0, and Next.js `16.3.3` production build PASS.
 - Production build generated all required CanonMesh routes.
-- StudioNet deployment: operational at `0xCb4E8279Eff17c734c3eA2e32657691610b3467A`; code/schema/stats and source parity are proven.
-- Live Vercel frontend: owner-deployed at https://canonmesh.vercel.app; hosted wallet-write proof is owner-operated and not claimed here.
+- StudioNet acceptance deployment: operational at `0x91eE572dB3981b60A72Ec29802af35eF86EFf22A`; code/schema/stats and source parity are proven for commit `d3548daa7003f2cc18d808dbf56ce0f9c2b63871`.
+- Live Vercel frontend: owner-deployed at https://canonmesh.vercel.app; it requires owner environment update to the acceptance contract before new-address hosted proof.
 
 ## Frozen engineering defaults
 
@@ -32,6 +32,7 @@ It settles which bounded facts belong to which world/branch/version and which ea
 - similarity = retrieval only
 - FINALIZED + explicit GenVM execution success before UI success
 - Wallet hydration uses non-interactive `eth_accounts`; explicit disconnect is persisted as a local UI preference and writes remain injected-wallet-only.
+- Team-review hardening: `_related()` uses bounded entity/lineage fallback after global KNN, and the frontend exposes and authoritatively confirms editor, branch activation, cancellation, and stale invalidation writes.
 
 ## Product boundary
 
